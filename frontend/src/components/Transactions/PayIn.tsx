@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import LedgerCreationModal from "@/components/modals/LedgerCreationModal";
+import CashCountSheet from "@/components/modals/CashCountSheet"; // Import CashCountSheet Modal
 import { api } from "@/services/api";
+import CashCountSheetModal from "../modals/CashCountSheetModal";
 
 interface Ledger {
   id: number;
@@ -20,6 +22,7 @@ interface TransactionData {
   remarks: string;
   ref_no?: string;
   debit_credit: string;
+  cash_count?: any; // Add cash_count field to include values from CashCountSheet
 }
 
 type PayOutRequest = {
@@ -37,6 +40,8 @@ const PayIn: React.FC = () => {
   const [remarks, setRemarks] = useState<string>("");
   const [refNo, setRefNo] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isCashCountModalOpen, setIsCashCountModalOpen] = useState<boolean>(false); // State for CashCountSheet Modal
+  const [cashCountValues, setCashCountValues] = useState<any>(null); // State to hold values from CashCountSheet
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -74,11 +79,12 @@ const PayIn: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return; // Prevent further submissions during ongoing request
-
-    setIsSubmitting(true); // Set submitting state to true
-    setError(null); // Reset error state
-
+    if (isSubmitting) return;
+  
+    setIsSubmitting(true);
+    setError(null);
+  
+    // Construct Transaction Data for Transaction API
     const transactionData1: TransactionData = {
       ledger_id: selectedCashBank!,
       particulars_id: selectedParticulars!,
@@ -87,8 +93,9 @@ const PayIn: React.FC = () => {
       credit_amount: 0,
       remarks,
       debit_credit: "debit",
+      cash_count: cashCountValues, // Include cash count values
     };
-
+  
     const transactionData2: TransactionData = {
       ledger_id: selectedParticulars!,
       particulars_id: selectedCashBank!,
@@ -97,23 +104,48 @@ const PayIn: React.FC = () => {
       credit_amount: creditAmount ? parseFloat(creditAmount) : 0,
       remarks,
       debit_credit: "credit",
+      cash_count: cashCountValues, // Include cash count values
     };
-
+  
     if (refNo.trim() !== "") {
       transactionData1.ref_no = refNo;
       transactionData2.ref_no = refNo;
     }
-
+  
+    // Prepare the PayOutRequest that includes both transactions
     const requestData: PayOutRequest = {
       transaction1: transactionData1,
       transaction2: transactionData2,
     };
-
+  
+    // Format Cash Count Values for the CashCount API (if applicable)
+    const cashCountRequestData = cashCountValues?.map(item => ({
+      currency: item.currency,
+      nos: item.nos,
+      amount: item.amount,
+      created_date: date, // Same as the transaction date
+    }));
+  
     try {
-      // Post both transactions in a single request
+      // 1. Submit PayIn transaction
       await api.post("/transactions/", requestData);
       console.log("Transactions successful");
-      // Reset form fields
+  
+      // 2. Submit Cash Count data (if available)
+      if (cashCountRequestData && cashCountRequestData.length > 0) {
+        const cashSheetData = {
+          created_date: date,
+          voucher_number: refNo ? parseInt(refNo, 10) : null,
+          amount: debitAmount ? parseFloat(debitAmount) : 0, // Total amount
+          transaction_type: "payin", // or 'payout' depending on the context
+          items: cashCountRequestData,
+        };
+  
+        await api.post("/cashsheet/", cashSheetData);  // Adjust the endpoint if needed
+        console.log("Cash Count Sheet submitted successfully");
+      }
+  
+      // Reset form fields and cash count values after successful submission
       setSelectedCashBank("");
       setSelectedParticulars("");
       setDate("");
@@ -121,16 +153,28 @@ const PayIn: React.FC = () => {
       setCreditAmount("");
       setRemarks("");
       setRefNo("");
+      setCashCountValues(null); // Reset Cash Count Sheet values
+  
     } catch (error) {
-      console.error("There was an error posting the transaction!", error);
+      console.error("There was an error posting the transaction or cash count!", error);
       setError("There was an error submitting the transaction. Please try again.");
     } finally {
-      setIsSubmitting(false); // Reset submitting state to false after the request completes
+      setIsSubmitting(false);
     }
   };
+  
+  
 
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
+
+  const handleOpenCashCountModal = () => setIsCashCountModalOpen(true); // Open CashCountSheet Modal
+  const handleCloseCashCountModal = (values: any) => {
+    setIsCashCountModalOpen(false);
+    setCashCountValues(values); // Capture cash count values
+  };
+  
+
 
   const refreshLedgerOptions = async () => {
     let allLedgers: Ledger[] = [];
@@ -164,12 +208,20 @@ const PayIn: React.FC = () => {
     <div className="bg-green-300">
       <div className="flex flex-col sm:flex-row items-center justify-between mb-4">
         <h1 className="text-2xl font-bold mb-2 sm:mb-0">Pay In</h1>
-        <button
-          onClick={handleOpenModal}
-          className="bg-[#6f42c1] text-white py-2 px-4 rounded"
-        >
-          Create Ledger
-        </button>
+        <div className="space-x-4">
+          <button
+            onClick={handleOpenModal}
+            className="bg-[#6f42c1] text-white py-2 px-4 rounded"
+          >
+            Create Ledger
+          </button>
+          <button
+            onClick={handleOpenCashCountModal}
+            className="bg-blue-500 text-white py-2 px-4 rounded"
+          >
+            Open Cash Count
+          </button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -277,9 +329,16 @@ const PayIn: React.FC = () => {
 
       {isModalOpen && (
         <LedgerCreationModal
-        isOpen={isModalOpen} 
+          isOpen={isModalOpen}
           onClose={handleCloseModal}
           refreshLedgerOptions={refreshLedgerOptions} // Pass the callback to the modal
+        />
+      )}
+
+      {isCashCountModalOpen && (
+        <CashCountSheetModal
+          isOpen={isCashCountModalOpen}
+          onClose={handleCloseCashCountModal} // Close modal and get values
         />
       )}
     </div>

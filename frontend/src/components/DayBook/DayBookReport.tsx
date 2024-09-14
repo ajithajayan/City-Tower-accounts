@@ -1,109 +1,89 @@
 import React, { useState, useEffect } from "react";
 import { api } from "@/services/api";
-import CashCountSheetModal from "@/components/modals/CashCountSheetModal"; // Adjust the import path as needed
-
-interface Transaction {
-  id: number;
-  date: string;
-  particulars: { name: string };
-  voucher_no: string;
-  debit_amount: string;
-  credit_amount: string;
-  balance_amount: string;
-  debit_credit: string;
-}
-
-interface CashCountSheet {
-  id: number;
-  created_date: string;
-  currency: string;
-  nos: string;
-  amount: string;
-}
 
 const DayBookReport: React.FC = () => {
   const today = new Date().toISOString().split("T")[0];
 
-  const [fromDate, setFromDate] = useState<string>(today);
+  const [fromDate, setFromDate] = useState<string>("2024-09-01");
   const [toDate, setToDate] = useState<string>(today);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [cashCountSheets, setCashCountSheets] = useState<CashCountSheet[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false); // Added state for the create modal
+  const [filteredData, setFilteredData] = useState<any[]>([]);
+  const [isSearched, setIsSearched] = useState(false);
+
+  // Fetch data from API
+  const fetchData = async () => {
+    try {
+      const response = await api.get("/cashsheet/");
+      const data = response.data.results;
+      if (Array.isArray(data)) {
+        setFilteredData(data);
+      } else {
+        console.error("Unexpected data format:", data);
+        setFilteredData([]);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
 
   useEffect(() => {
-    if (fromDate > toDate) {
-      setFromDate(toDate);
-    }
-  }, [toDate, fromDate]);
+    fetchData();
+  }, []);
 
   const handleSearch = () => {
-    if (fromDate && toDate) {
-      setIsSearching(true);
+    setIsSearched(true);
+    // Filter data by date range
+    const filteredTransactions = (filteredData || []).filter((transaction) => {
+      const transactionDate = new Date(transaction.created_date);
+      const startDate = new Date(fromDate);
+      const endDate = new Date(toDate);
+      return transactionDate >= startDate && transactionDate <= endDate;
+    });
 
-      // Fetch transactions
-      api
-        .get(`/transactions/ledger_report/?ledger=Cash Account&from_date=${fromDate}&to_date=${toDate}`)
-        .then((response) => {
-          setTransactions(response.data || []);
-        })
-        .catch((error) => {
-          console.error("There was an error fetching the transactions!", error);
-          setError("Could not load transactions. Please try again later.");
-        });
+    // Group transactions by date
+    const groupedTransactions = filteredTransactions.reduce((acc: any, transaction) => {
+      const date = transaction.created_date;
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(transaction);
+      return acc;
+    }, {} as any);
 
-      // Fetch cash count sheets
-      api
-        .get(`/cashcount-sheet/?from_date=${fromDate}&to_date=${toDate}`)
-        .then((response) => {
-          console.log("Cash Count Sheets Response:", response.data);
-          setCashCountSheets(response.data.results || []);
-        })
-        .catch((error) => {
-          console.error("There was an error fetching the cash count sheets!", error);
-          setError("Could not load cash count sheets. Please try again later.");
-        })
-        .finally(() => {
-          setIsSearching(false);
-        });
+    // Flatten and sort grouped transactions
+    const sortedGroupedTransactions = Object.entries(groupedTransactions).flatMap(([date, transactions]) =>
+      transactions.sort((a: any, b: any) =>
+        a.transaction_type.localeCompare(b.transaction_type)
+      )
+    );
+
+    setFilteredData(sortedGroupedTransactions);
+  };
+
+  // Grand total calculation with transaction type (payin/payout)
+  const grandTotal = (filteredData || []).reduce(
+    (acc, item) => {
+      const multiplier = item.transaction_type === "payin" ? 1 : -1;
+      const items = item.items || [];
+      items.forEach(({ currency, nos }) => {
+        if (acc.cashCount[currency] !== undefined) {
+          acc.cashCount[currency] += nos * multiplier;
+        }
+      });
+      acc.total += parseFloat(item.amount) * multiplier;
+      return acc;
+    },
+    {
+      cashCount: { 500: 0, 200: 0, 100: 0, 50: 0, 10: 0, 5: 0, 1: 0 },
+      total: 0,
     }
-  };
-
-  const handleCreateModalOpen = () => {
-    setIsModalOpen(true);
-  };
-
-  const handleCreateModalClose = () => {
-    setIsModalOpen(false);
-  };
-
-  const totalDebitAmount = transactions.reduce(
-    (sum, transaction) => sum + parseFloat(transaction.debit_amount || "0"),
-    0
   );
-  const totalCreditAmount = transactions.reduce(
-    (sum, transaction) => sum + parseFloat(transaction.credit_amount || "0"),
-    0
-  );
-
-  const totalBalanceAmount =
-    totalDebitAmount > totalCreditAmount
-      ? totalDebitAmount - totalCreditAmount
-      : totalCreditAmount - totalDebitAmount;
-
-  const balanceType =
-    totalDebitAmount > totalCreditAmount ? "Debit Amount" : "Credit Amount";
-
-  let runningDebitTotal = 0;
-  let runningCreditTotal = 0;
 
   return (
     <div className="p-6 bg-blue-200">
-      <h1 className="text-2xl font-bold mb-2 sm:mb-0">DayBook Report</h1>
+      <h1 className="text-2xl font-bold mb-4">DayBook Report</h1>
 
       <div className="bg-white p-6 shadow-md rounded-lg mb-6">
-        <div className="flex flex-wrap gap-4 items-end"> {/* Use flex here */}
+        <div className="flex flex-wrap gap-4 items-end">
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
             <input
@@ -126,117 +106,66 @@ const DayBookReport: React.FC = () => {
 
           <button
             onClick={handleSearch}
-            disabled={isSearching}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg shadow-sm transition duration-300 ease-in-out disabled:opacity-50"
+            className="bg-blue-600 text-white py-2 px-6 rounded-lg shadow hover:bg-blue-700"
           >
-            {isSearching ? "Searching..." : "Search"}
-          </button>
-
-          <button
-            onClick={handleCreateModalOpen}
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg shadow-sm transition duration-300 ease-in-out"
-          >
-            Create Cash Count Sheet
+            Search
           </button>
         </div>
       </div>
 
-
-      {error && <p className="text-red-500 mb-6">{error}</p>}
-
-      {transactions.length > 0 ? (
+      {isSearched && filteredData.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white shadow-md rounded-lg">
             <thead>
               <tr>
                 <th className="py-3 px-4 bg-gray-100 text-left text-sm font-medium text-gray-600">Date</th>
-                <th className="py-3 px-4 bg-gray-100 text-left text-sm font-medium text-gray-600">Voucher No</th>
-                <th className="py-3 px-4 bg-gray-100 text-left text-sm font-medium text-gray-600">Particulars</th>
-                <th className="py-3 px-4 bg-gray-100 text-right text-sm font-medium text-gray-600">Debit Amount</th>
-                <th className="py-3 px-4 bg-gray-100 text-right text-sm font-medium text-gray-600">Credit Amount</th>
-                <th className="py-3 px-4 bg-gray-100 text-center text-sm font-medium text-gray-600">Dr/Cr</th>
+                <th className="py-3 px-4 bg-gray-100 text-left text-sm font-medium text-gray-600">Transaction Type</th>
+                <th className="py-3 px-4 bg-gray-100 text-center text-sm font-medium text-gray-600">500</th>
+                <th className="py-3 px-4 bg-gray-100 text-center text-sm font-medium text-gray-600">200</th>
+                <th className="py-3 px-4 bg-gray-100 text-center text-sm font-medium text-gray-600">100</th>
+                <th className="py-3 px-4 bg-gray-100 text-center text-sm font-medium text-gray-600">50</th>
+                <th className="py-3 px-4 bg-gray-100 text-center text-sm font-medium text-gray-600">10</th>
+                <th className="py-3 px-4 bg-gray-100 text-center text-sm font-medium text-gray-600">5</th>
+                <th className="py-3 px-4 bg-gray-100 text-center text-sm font-medium text-gray-600">1</th>
+                <th className="py-3 px-4 bg-gray-100 text-right text-sm font-medium text-gray-600">Total</th>
               </tr>
             </thead>
             <tbody>
-              {transactions.map((transaction) => {
-                runningDebitTotal += parseFloat(transaction.debit_amount || "0");
-                runningCreditTotal += parseFloat(transaction.credit_amount || "0");
+              {filteredData.map((transaction, index) => (
+                <tr key={index}>
+                  <td className="py-2 px-4 border-b text-left text-sm text-gray-700">{transaction.created_date}</td>
+                  <td className="py-2 px-4 border-b text-left text-sm text-gray-700">{transaction.transaction_type}</td>
+                  <td className="py-2 px-4 border-b text-center text-sm text-gray-700">{transaction.items.find(item => item.currency === 500)?.nos || 0}</td>
+                  <td className="py-2 px-4 border-b text-center text-sm text-gray-700">{transaction.items.find(item => item.currency === 200)?.nos || 0}</td>
+                  <td className="py-2 px-4 border-b text-center text-sm text-gray-700">{transaction.items.find(item => item.currency === 100)?.nos || 0}</td>
+                  <td className="py-2 px-4 border-b text-center text-sm text-gray-700">{transaction.items.find(item => item.currency === 50)?.nos || 0}</td>
+                  <td className="py-2 px-4 border-b text-center text-sm text-gray-700">{transaction.items.find(item => item.currency === 10)?.nos || 0}</td>
+                  <td className="py-2 px-4 border-b text-center text-sm text-gray-700">{transaction.items.find(item => item.currency === 5)?.nos || 0}</td>
+                  <td className="py-2 px-4 border-b text-center text-sm text-gray-700">{transaction.items.find(item => item.currency === 1)?.nos || 0}</td>
+                  <td className="py-2 px-4 border-b text-right text-sm text-gray-700">{transaction.amount}</td>
+                </tr>
+              ))}
 
-                return (
-                  <tr key={transaction.id}>
-                    <td className="py-2 px-4 border-b text-left text-sm text-gray-700">{transaction.date}</td>
-                    <td className="py-2 px-4 border-b text-left text-sm text-gray-700">{transaction.voucher_no}</td>
-                    <td className="py-2 px-4 border-b text-left text-sm text-gray-700">{transaction.particulars.name}</td>
-                    <td className="py-2 px-4 border-b text-right text-sm text-gray-700">{transaction.debit_amount}</td>
-                    <td className="py-2 px-4 border-b text-right text-sm text-gray-700">{transaction.credit_amount}</td>
-                    <td className="py-2 px-4 border-b text-center text-sm text-gray-700">{transaction.debit_credit}</td>
-                  </tr>
-                );
-              })}
+              {/* Grand Total Row */}
               <tr>
-                <td colSpan={1} className="py-2 px-4 text-left text-sm font-semibold text-black">
-                  Current Total
-                </td>
-                <td colSpan={2} className="py-2 px-4 text-left text-sm font-semibold text-black"></td>
-                <td className="py-2 px-4 text-right text-sm font-semibold text-black">
-                  {runningDebitTotal.toFixed(2)}
-                </td>
-                <td className="py-2 px-4 text-right text-sm font-semibold text-black">
-                  {runningCreditTotal.toFixed(2)}
-                </td>
-                <td className="py-2 px-4 text-center text-sm font-semibold text-black"></td>
-              </tr>
-
-              <tr>
-                <td colSpan={1} className="py-2 px-4 text-left text-sm font-semibold text-black">
-                  Closing Balance
-                </td>
-                <td colSpan={2} className="py-2 px-4 text-left text-sm font-semibold text-black"></td>
-                <td colSpan={2} className="py-2 px-4 text-right text-sm font-semibold text-black">
-                  {totalBalanceAmount.toFixed(2)}
-                </td>
-                <td className="py-2 px-4 text-center text-sm font-semibold text-black">
-                  {balanceType}
-                </td>
+                <td colSpan={2} className="py-2 px-4 text-left text-sm font-semibold text-black">Grand Total</td>
+                <td className="py-2 px-4 text-center text-sm font-semibold text-black">{grandTotal.cashCount[500]}</td>
+                <td className="py-2 px-4 text-center text-sm font-semibold text-black">{grandTotal.cashCount[200]}</td>
+                <td className="py-2 px-4 text-center text-sm font-semibold text-black">{grandTotal.cashCount[100]}</td>
+                <td className="py-2 px-4 text-center text-sm font-semibold text-black">{grandTotal.cashCount[50]}</td>
+                <td className="py-2 px-4 text-center text-sm font-semibold text-black">{grandTotal.cashCount[10]}</td>
+                <td className="py-2 px-4 text-center text-sm font-semibold text-black">{grandTotal.cashCount[5]}</td>
+                <td className="py-2 px-4 text-center text-sm font-semibold text-black">{grandTotal.cashCount[1]}</td>
+                <td className="py-2 px-4 text-right text-sm font-semibold text-black">{grandTotal.total.toFixed(2)}</td>
               </tr>
             </tbody>
           </table>
         </div>
-      ) : (
+      ) : isSearched ? (
         <p>No transactions found for the selected date range.</p>
+      ) : (
+        <p>Please select a date range and click 'Search' to view the transactions.</p>
       )}
-
-      {cashCountSheets.length > 0 && (
-        <div className="mt-6">
-          <h2 className="text-xl font-bold mb-4">Cash Sheet</h2> {/* Header added here */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white shadow-md rounded-lg">
-              <thead>
-                <tr>
-                  <th className="py-3 px-4 bg-gray-100 text-left text-sm font-medium text-gray-600">Date</th>
-                  <th className="py-3 px-4 bg-gray-100 text-right text-sm font-medium text-gray-600">Currency</th>
-                  <th className="py-3 px-4 bg-gray-100 text-right text-sm font-medium text-gray-600">Nos</th>
-                  <th className="py-3 px-4 bg-gray-100 text-right text-sm font-medium text-gray-600">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cashCountSheets.map((sheet) => (
-                  <tr key={sheet.id}>
-                    <td className="py-2 px-4 border-b text-left text-sm text-gray-700">{sheet.created_date}</td>
-                    <td className="py-2 px-4 border-b text-right text-sm text-gray-700">{sheet.currency}</td>
-                    <td className="py-2 px-4 border-b text-right text-sm text-gray-700">{sheet.nos}</td>
-                    <td className="py-2 px-4 border-b text-right text-sm text-gray-700">{sheet.amount}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-      <CashCountSheetModal
-        isOpen={isModalOpen}
-        onClose={handleCreateModalClose}
-      />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { api } from "@/services/api"; // Assuming you have an API service
 
+// Define the structure of a cash count entry
 interface CashCountEntry {
   currency: string;
   nos: string;
@@ -8,11 +8,13 @@ interface CashCountEntry {
   created_date: string; // Correct field name
 }
 
+// Define the props for the CashCountSheetModal component
 interface CashCountSheetModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose: (entries: CashCountEntry[]) => void; // Pass entries back to parent component
 }
 
+// Initialize with default entries
 const initialEntries: CashCountEntry[] = [
   { currency: "500", nos: "", amount: "", created_date: new Date().toISOString().split("T")[0] },
   { currency: "200", nos: "", amount: "", created_date: new Date().toISOString().split("T")[0] },
@@ -23,22 +25,12 @@ const initialEntries: CashCountEntry[] = [
   { currency: "1", nos: "", amount: "", created_date: new Date().toISOString().split("T")[0] },
 ];
 
+// CashCountSheetModal component
 const CashCountSheetModal: React.FC<CashCountSheetModalProps> = ({ isOpen, onClose }) => {
   const [entries, setEntries] = useState<CashCountEntry[]>(initialEntries);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Update all entries' date when the first entry's date changes
-  const handleDateChange = (index: number, value: string) => {
-    const newEntries = entries.map((entry, i) => {
-      if (i === index) {
-        return { ...entry, created_date: value }; // Updated field name
-      }
-      return { ...entry, created_date: value }; // Update all entries' dates
-    });
-    setEntries(newEntries);
-  };
-
+  // Handle input changes for each entry
   const handleInputChange = (index: number, field: keyof CashCountEntry, value: string) => {
     const newEntries = entries.map((entry, i) => {
       if (i === index) {
@@ -56,6 +48,7 @@ const CashCountSheetModal: React.FC<CashCountSheetModalProps> = ({ isOpen, onClo
     setEntries(newEntries);
   };
 
+  // Handle form submission
   const handleSubmit = () => {
     // Filter out entries where nos is not greater than 0
     const filteredEntries = entries.filter(entry => Number(entry.nos) > 0);
@@ -65,23 +58,9 @@ const CashCountSheetModal: React.FC<CashCountSheetModalProps> = ({ isOpen, onClo
       return;
     }
 
-    setIsSubmitting(true);
-
-    // Send the filtered entries to the backend
-    api
-      .post("/cashcount-sheet/", { entries: filteredEntries }) // Sending only valid entries
-      .then(() => {
-        onClose();
-      })
-      .catch((error) => {
-        setError("Failed to create cash count sheet. Please try again.");
-        console.error(error);
-      })
-      .finally(() => {
-        setIsSubmitting(false);
-      });
+    // Send the filtered entries back to the parent component (PayInForm)
+    onClose(filteredEntries);
   };
-console.log('entries',entries);
 
   // Calculate grand total
   const calculateGrandTotal = () => {
@@ -106,7 +85,7 @@ console.log('entries',entries);
               <input
                 type="date"
                 value={entry.created_date} // Updated field name
-                onChange={(e) => handleDateChange(index, e.target.value)}
+                onChange={(e) => handleInputChange(index, "created_date", e.target.value)}
                 className="block w-full py-2 px-4 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none"
                 placeholder="Enter date"
               />
@@ -163,13 +142,12 @@ console.log('entries',entries);
         <div className="flex justify-end mt-4">
           <button
             onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg shadow-sm transition duration-300 ease-in-out disabled:opacity-50"
+            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg shadow-sm transition duration-300 ease-in-out"
           >
-            {isSubmitting ? "Creating..." : "Create"}
+            Create
           </button>
           <button
-            onClick={onClose}
+            onClick={() => onClose([])} // Pass an empty array if cancelled
             className="ml-4 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-2 px-6 rounded-lg shadow-sm transition duration-300 ease-in-out"
           >
             Cancel
