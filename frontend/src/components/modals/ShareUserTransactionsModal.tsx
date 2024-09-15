@@ -10,8 +10,9 @@ interface ShareUser {
 interface ShareUserTransaction {
     share_user_data: ShareUser; // Change to match ProfitLoseShareReport.tsx
     profit_lose: string;
-    percentage: number;
+    percentage: string;
     amount: string;
+    percentage_amount: string;
 }
 
 interface ShareUserTransactionsModalProps {
@@ -26,6 +27,10 @@ const ShareUserTransactionsModal: React.FC<ShareUserTransactionsModalProps> = ({
     // Calculate total amount
     const totalAmount = transactions.reduce(
         (sum, transaction) => sum + parseFloat(transaction.amount),
+        0
+    );
+    const totalPercentage = transactions.reduce(
+        (sum, transaction) => sum + parseFloat(transaction.percentage_amount),
         0
     );
 
@@ -48,6 +53,7 @@ const ShareUserTransactionsModal: React.FC<ShareUserTransactionsModalProps> = ({
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profit/Loss</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage Amount</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -56,14 +62,20 @@ const ShareUserTransactionsModal: React.FC<ShareUserTransactionsModalProps> = ({
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.share_user_data.name}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.share_user_data.category}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.profit_lose}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.percentage}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {parseFloat(transaction.percentage).toFixed(2)} %
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{transaction.amount}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{transaction.percentage_amount}</td>
                                 </tr>
                             ))}
                             <tr>
-                                <td className="px-6 py-4 text-sm font-semibold text-gray-700">Total Amount</td>
+                                <td className="px-6 py-4 text-sm font-semibold text-gray-700">Total </td>
                                 <td colSpan={4} className="px-6 py-4 text-sm font-bold text-gray-900 text-right">
                                     {totalAmount.toFixed(2)}
+                                </td>
+                                <td colSpan={4} className="px-6 py-4 text-sm font-bold text-gray-900 text-right">
+                                    {totalPercentage.toFixed(2)}
                                 </td>
                             </tr>
                         </tbody>

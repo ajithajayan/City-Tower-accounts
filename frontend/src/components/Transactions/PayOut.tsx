@@ -20,9 +20,12 @@ interface TransactionData {
   remarks: string;
   ref_no?: string;
   debit_credit: string;
+  transaction_type: 'payout',
+
 }
 
 type PayOutRequest = {
+  transaction_type: 'payout',
   transaction1: TransactionData;
   transaction2: TransactionData;
 };
@@ -87,6 +90,8 @@ const PayOut: React.FC = () => {
       credit_amount: 0,
       remarks,
       debit_credit: "debit",
+      transaction_type: 'payout',
+
     };
 
     const transactionData2: TransactionData = {
@@ -97,6 +102,8 @@ const PayOut: React.FC = () => {
       credit_amount: creditAmount ? parseFloat(creditAmount) : 0,
       remarks,
       debit_credit: "credit",
+      transaction_type: 'payout',
+
     };
 
     if (refNo.trim() !== "") {
@@ -105,6 +112,7 @@ const PayOut: React.FC = () => {
     }
 
     const requestData: PayOutRequest = {
+      transaction_type: 'payout',
       transaction1: transactionData1,
       transaction2: transactionData2,
     };

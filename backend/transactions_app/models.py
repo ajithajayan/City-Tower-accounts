@@ -37,7 +37,11 @@ class Transaction(models.Model):
         (DEBIT, 'Debit'),
         (CREDIT, 'Credit'),
     ]
-    
+    # TRANSACTION_CHOICES = [
+    #     ('payin', 'Payin'),
+    #     ('payout', 'Payout'),
+    # ]
+    # transaction_type = models.CharField(max_length=10, choices=TRANSACTION_CHOICES)
     ledger = models.ForeignKey(Ledger, on_delete=models.CASCADE, related_name='ledger_transactions')  
     particulars = models.ForeignKey(Ledger, on_delete=models.CASCADE, related_name='particulars_transactions') 
     date = models.DateField()
@@ -157,7 +161,7 @@ class ShareUserTransaction(models.Model):
     share_user = models.ForeignKey(ShareUsers, related_name='share_user_transactions', on_delete=models.CASCADE)
     percentage = models.DecimalField(max_digits=5, decimal_places=2)
     profit_lose = models.CharField(max_length=10, choices=PROFIT_LOSS_CHOICES)
-    profit_lose_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
     percentage_amount = models.DecimalField(max_digits=12, decimal_places=2)
 
     def __str__(self):
@@ -169,9 +173,19 @@ class CashCountSheet(models.Model):
         ('payout', 'Payout'),
     ]
     created_date = models.DateField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)  
+    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_CHOICES)
+
+    def __str__(self):
+        return f"{self.transaction_type} - {self.amount}"
+
+
+class CashCountSheetItems(models.Model):
+    created_date = models.DateField()
     currency = models.PositiveIntegerField()
     nos = models.PositiveIntegerField() 
     amount = models.DecimalField(max_digits=12, decimal_places=2)  
-    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_CHOICES)
+    ref = models.ForeignKey(CashCountSheet, on_delete=models.CASCADE, related_name='items')
+
     def __str__(self):
         return f"{self.currency} - {self.nos} - {self.amount}"

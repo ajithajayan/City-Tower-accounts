@@ -33,7 +33,7 @@ const SalesReportPage = lazy(() => import("./pages/SalesReportPage"));
 const TransactionsPage = lazy(() => import("./pages/TransactionsPage"));
 const ShareManagement = lazy(() => import("./pages/ShareManagement"));
 const DayBookPage = lazy(() => import("./pages/DayBookPage"));
-
+const SalesEntry = lazy(() => import("./pages/SaleEntryPage"))
 function App() {
   return (
     <Provider store={store}>
@@ -168,6 +168,14 @@ function App() {
                   element={
                     <ProtectedRoute allowedRoles={["staff", "admin"]}>
                       <DayBookPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/sales-entry"
+                  element={
+                    <ProtectedRoute allowedRoles={["staff", "admin"]}>
+                      <SalesEntry  />
                     </ProtectedRoute>
                   }
                 />

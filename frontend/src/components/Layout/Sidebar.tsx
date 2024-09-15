@@ -71,6 +71,8 @@ const Sidebar: React.FC = () => {
     { path: "/transactions", icon: ArrowRightLeft, label: "Transactions" },
     { path: "/share-management", icon: ChartColumn, label: "ShareManagement" },
     { path: "/day-book", icon: CalendarRange , label: "DayBook" },
+    { path: "/sales-entry", icon: CalendarRange , label: "SalesEntry" },
+
     // { path: "/settings", icon: Settings, label: "Settings" },
   ];
 

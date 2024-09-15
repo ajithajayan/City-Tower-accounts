@@ -42,36 +42,133 @@ class LedgerViewSet(viewsets.ModelViewSet):
     queryset = Ledger.objects.all()
     serializer_class = LedgerSerializer
 
+    @action(detail=False, methods=['get'], url_path='filter-by-group')
+    def filter_ledger_by_group(self, request):
+        group_name = request.query_params.get('group_name')  # Get group name from query params
+        
+        if group_name:
+            # Filter ledgers based on the group name
+            ledgers = Ledger.objects.filter(group__name=group_name)
+            
+            if not ledgers.exists():  # If no ledgers found, return an empty list explicitly
+                return Response([])
+
+            # Serialize the filtered ledgers
+            serializer = self.get_serializer(ledgers, many=True)
+            return Response(serializer.data)
+        else:
+            return Response({"error": "Group name not provided"}, status=400)
+        
+    @action(detail=False, methods=['get'], url_path='filter-by-ledger-name')
+    def filter_by_ledger_name(self, request):
+        ledger_name = request.query_params.get('ledger_name')  
+
+        if ledger_name:
+            ledgers = Ledger.objects.filter(name__icontains=ledger_name)
+            
+            if not ledgers.exists():
+                return Response([]) 
+
+            serializer = self.get_serializer(ledgers, many=True)
+            return Response(serializer.data)
+        else:
+            return Response({"error": "Ledger name not provided"}, status=400)
 
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
 
+    # @transaction.atomic
+    # def create(self, request, *args, **kwargs):
+    #     transaction1_data = request.data.get('transaction1')
+    #     transaction2_data = request.data.get('transaction2')
+
+    #     if not transaction1_data or not transaction2_data:
+    #         return Response({"error": "Both transaction1 and transaction2 are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    #     # Generate the next voucher number
+    #     last_transaction = Transaction.objects.order_by('-voucher_no').first()
+    #     next_voucher_no = (last_transaction.voucher_no + 1) if last_transaction else 1
+
+    #     # Assign the generated voucher number to both transactions
+    #     transaction1_data['voucher_no'] = next_voucher_no
+    #     transaction2_data['voucher_no'] = next_voucher_no
+
+    #     serializer1 = self.get_serializer(data=transaction1_data)
+    #     serializer1.is_valid(raise_exception=True)
+    #     self.perform_create(serializer1)
+
+    #     serializer2 = self.get_serializer(data=transaction2_data)
+    #     serializer2.is_valid(raise_exception=True)
+    #     self.perform_create(serializer2)
+
+    #     return Response(serializer1.data, status=status.HTTP_201_CREATED) 
+
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        transaction1_data = request.data.get('transaction1')
-        transaction2_data = request.data.get('transaction2')
+        transaction_type = request.data.get('transaction_type', '')
+        
+        if transaction_type == 'payin' or transaction_type == 'payout':
+            return self.handle_pay_in_out(request)
+        elif transaction_type == 'salesentry':
+            return self.handle_sales_entry(request)
+        else:
+            return Response({"error": "Invalid transaction type."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not transaction1_data or not transaction2_data:
-            return Response({"error": "Both transaction1 and transaction2 are required."}, status=status.HTTP_400_BAD_REQUEST)
+    def handle_pay_in_out(self, request):
+        transaction1 = request.data.get('transaction1')
+        transaction2 = request.data.get('transaction2')
+
+        if not transaction1 or not transaction2:
+            return Response({"error": "Both transactions are required for Pay In/Out."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Generate the next voucher number
         last_transaction = Transaction.objects.order_by('-voucher_no').first()
         next_voucher_no = (last_transaction.voucher_no + 1) if last_transaction else 1
 
-        # Assign the generated voucher number to both transactions
-        transaction1_data['voucher_no'] = next_voucher_no
-        transaction2_data['voucher_no'] = next_voucher_no
+        created_transactions = []
+        for transaction_data in [transaction1, transaction2]:
+            transaction_data['voucher_no'] = next_voucher_no
+            serializer = self.get_serializer(data=transaction_data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            created_transactions.append(serializer.data)
 
-        serializer1 = self.get_serializer(data=transaction1_data)
-        serializer1.is_valid(raise_exception=True)
-        self.perform_create(serializer1)
+        return Response(created_transactions, status=status.HTTP_201_CREATED)
 
-        serializer2 = self.get_serializer(data=transaction2_data)
-        serializer2.is_valid(raise_exception=True)
-        self.perform_create(serializer2)
+    def handle_sales_entry(self, request):
+        transaction_keys = [
+            'salescashtransaction1', 'salescashtransaction2',
+            'salesbanktransaction1', 'salesbanktransaction2',
+            'purchasetransaction1', 'purchasetransaction2'
+        ]
+        
+        if not all(key in request.data for key in transaction_keys):
+            return Response({"error": "All transaction data is required for Sales Entry."}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(serializer1.data, status=status.HTTP_201_CREATED) 
+        # Generate the next voucher number
+        last_transaction = Transaction.objects.order_by('-voucher_no').first()
+        next_voucher_no = (last_transaction.voucher_no + 1) if last_transaction else 1
+
+        created_transactions = []
+        for key in transaction_keys:
+            transaction_data = request.data[key]
+            transaction_data['voucher_no'] = next_voucher_no
+
+            # Convert string amounts to float
+            for amount_field in ['debit_amount', 'credit_amount']:
+                if amount_field in transaction_data:
+                    transaction_data[amount_field] = float(transaction_data[amount_field])
+
+            serializer = self.get_serializer(data=transaction_data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            created_transactions.append(serializer.data)
+
+        return Response(created_transactions, status=status.HTTP_201_CREATED)
+
+    def perform_create(self, serializer):
+        serializer.save()
 
     @action(detail=False, methods=['get'])
     def ledger_report(self, request):

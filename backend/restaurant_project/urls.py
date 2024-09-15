@@ -44,6 +44,7 @@ from transactions_app.views import (CashCountSheetViewSet, NatureGroupViewSet,
  BalanceSheetViewSet,
  ShareUserManagementViewSet,
  ProfitLossShareTransactionViewSet,
+
  )
 
 router = DefaultRouter()
@@ -100,6 +101,7 @@ urlpatterns = [
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/logout/", LogoutView.as_view({"post": "logout"}), name="logout"),
     path("api/search-dishes/", SearchDishesAPIView.as_view(), name="search_dishes"),  # Include the search API endpoint
+
 
     # Register the new Cancel Order API
     path("api/bills/<int:bill_id>/cancel_order/", CancelOrderByBillView.as_view(), name="cancel-order-by-bill"),

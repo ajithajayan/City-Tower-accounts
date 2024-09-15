@@ -1,4 +1,3 @@
-// ProfitLoseShareReport.tsx
 import React, { useEffect, useState } from 'react';
 import { api } from '@/services/api';
 import ShareUserTransactionsModal from '@/components/modals/ShareUserTransactionsModal';
@@ -10,10 +9,11 @@ interface ShareUser {
 }
 
 interface ShareUserTransaction {
-    share_user_data: ShareUser; // Ensure the name is consistent
+    share_user_data: ShareUser;
     profit_lose: string;
-    percentage: number;
+    percentage: string;
     amount: string;
+    percentage_amount: string;
 }
 
 interface ProfitLossShareTransaction {
@@ -29,7 +29,6 @@ interface ProfitLossShareTransaction {
     share_user_transactions: ShareUserTransaction[];
 }
 
-
 const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString(); // Adjust the format as needed
@@ -42,17 +41,25 @@ const ProfitLoseShareReport: React.FC = () => {
     const [selectedTransaction, setSelectedTransaction] = useState<ShareUserTransaction[] | null>(null);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
+    // Pagination states
+    const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
+    const [previousPageUrl, setPreviousPageUrl] = useState<string | null>(null);
+    const [currentPageUrl, setCurrentPageUrl] = useState<string>('/profit-loss-share-transactions/');
+
     useEffect(() => {
-        const fetchTransactions = async () => {
+        const fetchTransactions = async (url: string) => {
             try {
-                const response = await api.get('/profit-loss-share-transactions/');
-                
+                setLoading(true);
+                const response = await api.get(url);
+
                 // Log the API response for debugging
                 console.log('API Response:', response.data);
 
-                // Extract transactions from the 'results' field
+                // Extract transactions from the 'results' field and update pagination URLs
                 if (Array.isArray(response.data.results)) {
                     setTransactions(response.data.results);
+                    setNextPageUrl(response.data.next || null);
+                    setPreviousPageUrl(response.data.previous || null);
                 } else {
                     throw new Error('Unexpected response format');
                 }
@@ -64,8 +71,8 @@ const ProfitLoseShareReport: React.FC = () => {
             }
         };
 
-        fetchTransactions();
-    }, []);
+        fetchTransactions(currentPageUrl);
+    }, [currentPageUrl]);
 
     const handleViewClick = (transaction: ProfitLossShareTransaction) => {
         setSelectedTransaction(transaction.share_user_transactions);
@@ -75,6 +82,18 @@ const ProfitLoseShareReport: React.FC = () => {
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setSelectedTransaction(null);
+    };
+
+    const handleNextPage = () => {
+        if (nextPageUrl) {
+            setCurrentPageUrl(nextPageUrl);
+        }
+    };
+
+    const handlePreviousPage = () => {
+        if (previousPageUrl) {
+            setCurrentPageUrl(previousPageUrl);
+        }
     };
 
     if (loading) return <p>Loading...</p>;
@@ -104,7 +123,7 @@ const ProfitLoseShareReport: React.FC = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(transaction.created_date)}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.period_from}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.period_to}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.total_percentage}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{parseFloat(transaction.total_percentage).toFixed(2)} %</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.status}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.profit_amount}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.loss_amount}</td>
@@ -113,6 +132,24 @@ const ProfitLoseShareReport: React.FC = () => {
                     ))}
                 </tbody>
             </table>
+
+            <div className="flex justify-between mt-4">
+                <button
+                    onClick={handlePreviousPage}
+                    disabled={!previousPageUrl}
+                    className={`px-4 py-2 bg-gray-300 rounded ${!previousPageUrl ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-400'}`}
+                >
+                    Previous
+                </button>
+                <button
+                    onClick={handleNextPage}
+                    disabled={!nextPageUrl}
+                    className={`px-4 py-2 bg-gray-300 rounded ${!nextPageUrl ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-400'}`}
+                >
+                    Next
+                </button>
+            </div>
+
             {isModalOpen && selectedTransaction && (
                 <ShareUserTransactionsModal
                     transactions={selectedTransaction}
