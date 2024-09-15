@@ -167,25 +167,37 @@ class ShareUserTransaction(models.Model):
     def __str__(self):
         return f'{self.share_user.name} - {self.transaction.transaction_no}'
 
+
 class CashCountSheet(models.Model):
     TRANSACTION_CHOICES = [
         ('payin', 'Payin'),
         ('payout', 'Payout'),
     ]
-    created_date = models.DateField()
-    amount = models.DecimalField(max_digits=12, decimal_places=2)  
-    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_CHOICES)
+    
+    created_date = models.DateField()  # Date of the transaction
+    voucher_number = models.DecimalField(max_digits=10, decimal_places=0, blank=True, null=True)  # Unique voucher number
+    amount = models.DecimalField(max_digits=12, decimal_places=2)  # Amount of the transaction
+    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_CHOICES)  # Type of transaction (Payin/Payout)
 
     def __str__(self):
-        return f"{self.transaction_type} - {self.amount}"
+        return f"{self.transaction_type.capitalize()} - {self.amount}"
+
+    def get_total_amount(self):
+        """Calculate the total amount for this transaction."""
+        return sum(item.amount for item in self.items.all())
+
+    class Meta:
+        verbose_name = "Cash Count Sheet"
+        verbose_name_plural = "Cash Count Sheets"
 
 
 class CashCountSheetItems(models.Model):
     created_date = models.DateField()
     currency = models.PositiveIntegerField()
-    nos = models.PositiveIntegerField() 
-    amount = models.DecimalField(max_digits=12, decimal_places=2)  
+    nos = models.PositiveIntegerField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
     ref = models.ForeignKey(CashCountSheet, on_delete=models.CASCADE, related_name='items')
 
     def __str__(self):
         return f"{self.currency} - {self.nos} - {self.amount}"
+

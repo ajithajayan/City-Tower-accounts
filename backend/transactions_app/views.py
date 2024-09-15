@@ -324,40 +324,5 @@ class ProfitLossShareTransactionViewSet(viewsets.ModelViewSet):
         serializer.save()
 
 class CashCountSheetViewSet(viewsets.ModelViewSet):
+    queryset = CashCountSheet.objects.all()
     serializer_class = CashCountSheetSerializer
-    def get_queryset(self):
-        queryset = CashCountSheet.objects.all()
-
-        # Get the from_date and to_date parameters
-        from_date = self.request.query_params.get('from_date')
-        to_date = self.request.query_params.get('to_date')
-
-        if from_date and to_date:
-            try:
-                from_date = datetime.strptime(from_date, "%Y-%m-%d")
-                to_date = datetime.strptime(to_date, "%Y-%m-%d")
-                queryset = queryset.filter(
-                    created_date__range=(from_date, to_date)
-                )
-            except ValueError:
-                # Handle the case where the date format is incorrect
-                return Response({"error": "Invalid date format"}, status=status.HTTP_400_BAD_REQUEST)
-
-        return queryset
-    def create(self, request, *args, **kwargs):
-        entries = request.data.get('entries', [])
-        
-        # Validate if entries is a list
-        if not isinstance(entries, list):
-            return Response({"error": "Invalid data format"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Create a list of serializers with the incoming data
-        serializer = CashCountSheetSerializer(data=entries, many=True)
-        
-        # Validate the data
-        if serializer.is_valid():
-            # Save the data
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

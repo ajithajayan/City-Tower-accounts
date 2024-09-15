@@ -10,6 +10,7 @@ from .models import (
     ShareUserTransaction,
     ProfitLossShareTransaction,
     CashCountSheet,
+    CashCountSheetItems
 
     )
 
@@ -124,9 +125,52 @@ class ProfitLossShareTransactionSerializer(serializers.ModelSerializer):
         
         return transaction
 
-class CashCountSheetSerializer(serializers.ModelSerializer):
+
+class CashCountSheetItemsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CashCountSheet
+        model = CashCountSheetItems
         fields = ['id', 'created_date', 'currency', 'nos', 'amount']
 
+class CashCountSheetSerializer(serializers.ModelSerializer):
+    # Nested serializer for items related to the cash sheet
+    items = CashCountSheetItemsSerializer(many=True)
+
+    class Meta:
+        model = CashCountSheet
+        fields = ['id', 'created_date', 'voucher_number', 'amount', 'transaction_type', 'items']
+
+    def create(self, validated_data):
+        # Pop out the items data from the validated data
+        items_data = validated_data.pop('items')
+        
+        # Create the CashCountSheet instance
+        cash_sheet = CashCountSheet.objects.create(**validated_data)
+        
+        # Create the related CashCountSheetItems instances
+        for item_data in items_data:
+            CashCountSheetItems.objects.create(ref=cash_sheet, **item_data)
+        
+        return cash_sheet
+
+    def update(self, instance, validated_data):
+        # Update CashCountSheet fields
+        instance.voucher_number = validated_data.get('voucher_number', instance.voucher_number)
+        instance.amount = validated_data.get('amount', instance.amount)
+        instance.transaction_type = validated_data.get('transaction_type', instance.transaction_type)
+        instance.save()
+
+        # Update or create items
+        items_data = validated_data.pop('items', [])
+        for item_data in items_data:
+            item_instance = CashCountSheetItems.objects.filter(ref=instance, currency=item_data['currency']).first()
+            if item_instance:
+                # Update the existing item
+                item_instance.nos = item_data.get('nos', item_instance.nos)
+                item_instance.amount = item_data.get('amount', item_instance.amount)
+                item_instance.save()
+            else:
+                # Create new item if not exists
+                CashCountSheetItems.objects.create(ref=instance, **item_data)
+        
+        return instance
 
