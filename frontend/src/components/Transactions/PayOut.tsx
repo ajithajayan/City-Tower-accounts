@@ -16,7 +16,9 @@ interface CashCountItem {
   currency: string;
   nos: number;
   amount: number;
+  created_date: string;
 }
+
 
 interface TransactionData {
   ledger_id: string;
@@ -348,8 +350,8 @@ const PayOut: React.FC = () => {
 
       <CashCountSheetModal
         isOpen={isCashCountModalOpen}
-        onClose={(data: CashCountItem[]) => handleCloseCashCountModal(data)}
-        onSubmit={(data: CashCountItem[]) => setCashCountValues(data)}
+        onClose={(data: any) => handleCloseCashCountModal(data)}
+        onSubmit={(data: any) => setCashCountValues(data)}
       />
     </div>
   );
