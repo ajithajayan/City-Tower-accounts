@@ -13,13 +13,27 @@ interface Transaction {
   debit_credit: string;
 }
 
+type Denomination = 500 | 200 | 100 | 50 | 10 | 5 | 1;
+
+interface CashCountSheetItem {
+  currency: Denomination;
+  nos: number;
+}
+
 interface CashCountSheet {
   id: number;
   created_date: string;
-  currency: string;
-  nos: string;
+  transaction_type: string;
+  items: CashCountSheetItem[];
   amount: string;
 }
+
+interface GrandTotal {
+  cashCount: Record<Denomination, number>;
+  total: number;
+}
+
+const denominations: Denomination[] = [500, 200, 100, 50, 10, 5, 1];
 
 const DayBookReport: React.FC = () => {
   const today = new Date().toISOString().split("T")[0];
@@ -27,10 +41,11 @@ const DayBookReport: React.FC = () => {
   const [fromDate, setFromDate] = useState<string>(today);
   const [toDate, setToDate] = useState<string>(today);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [cashCountSheets, setCashCountSheets] = useState<CashCountSheet[]>([]);
+  const [, setCashCountSheets] = useState<CashCountSheet[]>([]);
+  const [filteredCashCountSheets, setFilteredCashCountSheets] = useState<CashCountSheet[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false); // Added state for the create modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     if (fromDate > toDate) {
@@ -41,6 +56,7 @@ const DayBookReport: React.FC = () => {
   const handleSearch = () => {
     if (fromDate && toDate) {
       setIsSearching(true);
+      setError(null);
 
       // Fetch transactions
       api
@@ -53,12 +69,13 @@ const DayBookReport: React.FC = () => {
           setError("Could not load transactions. Please try again later.");
         });
 
-      // Fetch cash count sheets
+      // Fetch all cash count sheets (without date filtering)
       api
-        .get(`/cashsheet/?from_date=${fromDate}&to_date=${toDate}`)
+        .get(`/cashsheet/`)
         .then((response) => {
           console.log("Cash Count Sheets Response:", response.data);
           setCashCountSheets(response.data.results || []);
+          filterCashCountSheets(response.data.results || [], fromDate, toDate);
         })
         .catch((error) => {
           console.error("There was an error fetching the cash count sheets!", error);
@@ -70,6 +87,13 @@ const DayBookReport: React.FC = () => {
     }
   };
 
+  const filterCashCountSheets = (sheets: CashCountSheet[], startDate: string, endDate: string) => {
+    const filtered = sheets.filter(sheet => {
+      const sheetDate = new Date(sheet.created_date);
+      return sheetDate >= new Date(startDate) && sheetDate <= new Date(endDate);
+    });
+    setFilteredCashCountSheets(filtered);
+  };
 
   const handleCreateModalClose = () => {
     setIsModalOpen(false);
@@ -95,12 +119,25 @@ const DayBookReport: React.FC = () => {
   let runningDebitTotal = 0;
   let runningCreditTotal = 0;
 
+  // Calculate grand totals for denominations
+  const grandTotal: GrandTotal = filteredCashCountSheets.reduce(
+    (totals, sheet) => {
+      denominations.forEach((denom) => {
+        const count = sheet.items.find((item) => item.currency === denom)?.nos || 0;
+        totals.cashCount[denom] = (totals.cashCount[denom] || 0) + count;
+      });
+      totals.total += parseFloat(sheet.amount || "0");
+      return totals;
+    },
+    { cashCount: {} as Record<Denomination, number>, total: 0 }
+  );
+
   return (
     <div className="p-6 bg-blue-200">
       <h1 className="text-2xl font-bold mb-2 sm:mb-0">DayBook Report</h1>
 
       <div className="bg-white p-6 shadow-md rounded-lg mb-6">
-        <div className="flex flex-wrap gap-4 items-end"> {/* Use flex here */}
+        <div className="flex flex-wrap gap-4 items-end">
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
             <input
@@ -130,7 +167,6 @@ const DayBookReport: React.FC = () => {
           </button>
         </div>
       </div>
-
 
       {error && <p className="text-red-500 mb-6">{error}</p>}
 
@@ -164,69 +200,71 @@ const DayBookReport: React.FC = () => {
                 );
               })}
               <tr>
-                <td colSpan={1} className="py-2 px-4 text-left text-sm font-semibold text-black">
-                  Current Total
-                </td>
-                <td colSpan={2} className="py-2 px-4 text-left text-sm font-semibold text-black"></td>
-                <td className="py-2 px-4 text-right text-sm font-semibold text-black">
-                  {runningDebitTotal.toFixed(2)}
-                </td>
-                <td className="py-2 px-4 text-right text-sm font-semibold text-black">
-                  {runningCreditTotal.toFixed(2)}
-                </td>
+                <td colSpan={3} className="py-2 px-4 text-left text-sm font-semibold text-black">Current Total</td>
+                <td className="py-2 px-4 text-right text-sm font-semibold text-black">{runningDebitTotal.toFixed(2)}</td>
+                <td className="py-2 px-4 text-right text-sm font-semibold text-black">{runningCreditTotal.toFixed(2)}</td>
                 <td className="py-2 px-4 text-center text-sm font-semibold text-black"></td>
               </tr>
-
               <tr>
-                <td colSpan={1} className="py-2 px-4 text-left text-sm font-semibold text-black">
-                  Closing Balance
-                </td>
-                <td colSpan={2} className="py-2 px-4 text-left text-sm font-semibold text-black"></td>
+                <td colSpan={3} className="py-2 px-4 text-left text-sm font-semibold text-black">Closing Balance</td>
                 <td colSpan={2} className="py-2 px-4 text-right text-sm font-semibold text-black">
-                  {totalBalanceAmount.toFixed(2)}
-                </td>
-                <td className="py-2 px-4 text-center text-sm font-semibold text-black">
-                  {balanceType}
+                  {totalBalanceAmount.toFixed(2)} ({balanceType})
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
       ) : (
-        <p>No transactions found for the selected date range.</p>
+        <p className="text-gray-600 mt-6">No transactions found for the selected date range.</p>
       )}
 
-      {cashCountSheets.length > 0 && (
+      {filteredCashCountSheets.length > 0 && (
         <div className="mt-6">
-          <h2 className="text-xl font-bold mb-4">Cash Sheet</h2> {/* Header added here */}
+          <h2 className="text-xl font-bold mb-4">Cash Sheet</h2>
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white shadow-md rounded-lg">
               <thead>
                 <tr>
                   <th className="py-3 px-4 bg-gray-100 text-left text-sm font-medium text-gray-600">Date</th>
-                  <th className="py-3 px-4 bg-gray-100 text-right text-sm font-medium text-gray-600">Currency</th>
-                  <th className="py-3 px-4 bg-gray-100 text-right text-sm font-medium text-gray-600">Nos</th>
-                  <th className="py-3 px-4 bg-gray-100 text-right text-sm font-medium text-gray-600">Amount</th>
+                  <th className="py-3 px-4 bg-gray-100 text-left text-sm font-medium text-gray-600">Transaction Type</th>
+                  {denominations.map((denom) => (
+                    <th key={denom} className="py-3 px-4 bg-gray-100 text-center text-sm font-medium text-gray-600">{denom}</th>
+                  ))}
+                  <th className="py-3 px-4 bg-gray-100 text-right text-sm font-medium text-gray-600">Total</th>
                 </tr>
               </thead>
               <tbody>
-                {cashCountSheets.map((sheet) => (
+                {filteredCashCountSheets.map((sheet) => (
                   <tr key={sheet.id}>
                     <td className="py-2 px-4 border-b text-left text-sm text-gray-700">{sheet.created_date}</td>
-                    <td className="py-2 px-4 border-b text-right text-sm text-gray-700">{sheet.currency}</td>
-                    <td className="py-2 px-4 border-b text-right text-sm text-gray-700">{sheet.nos}</td>
+                    <td className="py-2 px-4 border-b text-left text-sm text-gray-700">{sheet.transaction_type}</td>
+                    {denominations.map((denom) => (
+                      <td key={denom} className="py-2 px-4 border-b text-center text-sm text-gray-700">
+                        {sheet.items.find(item => item.currency === denom)?.nos || 0}
+                      </td>
+                    ))}
                     <td className="py-2 px-4 border-b text-right text-sm text-gray-700">{sheet.amount}</td>
                   </tr>
                 ))}
+
+                {/* Grand Total Row */}
+                <tr>
+                  <td colSpan={2} className="py-2 px-4 text-left text-sm font-semibold text-black">Grand Total</td>
+                  {denominations.map((denom) => (
+                    <td key={denom} className="py-2 px-4 text-center text-sm font-semibold text-black">
+                      {grandTotal.cashCount[denom] || 0}
+                    </td>
+                  ))}
+                  <td className="py-2 px-4 text-right text-sm font-semibold text-black">{grandTotal.total.toFixed(2)}</td>
+                </tr>
               </tbody>
             </table>
           </div>
         </div>
       )}
-      <CashCountSheetModal
-        isOpen={isModalOpen}
-        onClose={handleCreateModalClose}
-      />
+
+      {/* Cash Count Sheet Modal */}
+      {isModalOpen && <CashCountSheetModal isOpen={isModalOpen} onClose={handleCreateModalClose} />}
     </div>
   );
 };
