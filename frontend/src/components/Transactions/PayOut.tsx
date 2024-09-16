@@ -27,27 +27,31 @@ interface TransactionData {
   remarks: string;
   ref_no?: string;
   debit_credit: string;
-  transaction_type: 'payout',
+  transaction_type: "payout";
 }
 
 type PayOutRequest = {
-  transaction_type: 'payout',
+  transaction_type: "payout";
   transaction1: TransactionData;
   transaction2: TransactionData;
 };
 
 const PayOut: React.FC = () => {
   const [ledgerOptions, setLedgerOptions] = useState<Ledger[]>([]);
-  const [selectedExpensePayables, setSelectedExpensePayables] = useState<string>("");
+  const [selectedExpensePayables, setSelectedExpensePayables] =
+    useState<string>("");
   const [selectedParticulars, setSelectedParticulars] = useState<string>("");
   const [date, setDate] = useState<string>("");
   const [debitAmount, setDebitAmount] = useState<string>("");
   const [creditAmount, setCreditAmount] = useState<string>("");
   const [remarks, setRemarks] = useState<string>("");
   const [refNo, setRefNo] = useState<string>("");
-  const [cashCountValues, setCashCountValues] = useState<CashCountItem[] | null>(null);
+  const [cashCountValues, setCashCountValues] = useState<
+    CashCountItem[] | null
+  >(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isCashCountModalOpen, setIsCashCountModalOpen] = useState<boolean>(false);
+  const [isCashCountModalOpen, setIsCashCountModalOpen] =
+    useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -82,7 +86,7 @@ const PayOut: React.FC = () => {
   }, []);
 
   const handleOpenCashCountModal = () => setIsCashCountModalOpen(true);
-  
+
   const handleCloseCashCountModal = (entries: CashCountItem[]) => {
     setCashCountValues(entries);
     setIsCashCountModalOpen(false);
@@ -103,7 +107,7 @@ const PayOut: React.FC = () => {
       credit_amount: 0,
       remarks,
       debit_credit: "debit",
-      transaction_type: 'payout',
+      transaction_type: "payout",
       ref_no: refNo.trim() || undefined,
     };
 
@@ -115,12 +119,12 @@ const PayOut: React.FC = () => {
       credit_amount: creditAmount ? parseFloat(creditAmount) : 0,
       remarks,
       debit_credit: "credit",
-      transaction_type: 'payout',
+      transaction_type: "payout",
       ref_no: refNo.trim() || undefined,
     };
 
     const requestData: PayOutRequest = {
-      transaction_type: 'payout',
+      transaction_type: "payout",
       transaction1: transactionData1,
       transaction2: transactionData2,
     };
@@ -150,7 +154,9 @@ const PayOut: React.FC = () => {
       setCashCountValues(null);
     } catch (error) {
       console.error("Error posting transactions or cash count", error);
-      setError("There was an error submitting the transaction. Please try again.");
+      setError(
+        "There was an error submitting the transaction. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -206,9 +212,13 @@ const PayOut: React.FC = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-lg font-semibold mb-1">Date</label>
+        {/* Flexbox for Date and Reference No. */}
+        <div className="flex justify-between gap-4">
+          {/* Date Field */}
+          <div className="flex-1 max-w-xs">
+            <label className="block text-lg font-semibold mb-1 text-black">
+              Date
+            </label>
             <input
               type="date"
               value={date}
@@ -218,8 +228,11 @@ const PayOut: React.FC = () => {
             />
           </div>
 
-          <div>
-            <label className="block text-lg font-semibold mb-1">Reference No.</label>
+          {/* Reference No. Field */}
+          <div className="flex-1 max-w-xs">
+            <label className="block text-lg font-semibold mb-1 text-black">
+              Reference No.
+            </label>
             <input
               type="text"
               value={refNo}
@@ -227,9 +240,15 @@ const PayOut: React.FC = () => {
               className="border border-gray-300 rounded-md p-2 w-full"
             />
           </div>
+        </div>
 
+        {/* Rest of the form in grid layout */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Expense/Payables Field */}
           <div>
-            <label className="block text-lg font-semibold mb-1">Expense/Payables</label>
+            <label className="block text-lg font-semibold mb-1">
+              Expense/Payables
+            </label>
             <select
               value={selectedExpensePayables}
               onChange={(e) => setSelectedExpensePayables(e.target.value)}
@@ -245,8 +264,11 @@ const PayOut: React.FC = () => {
             </select>
           </div>
 
+          {/* Debit Amount Field */}
           <div>
-            <label className="block text-lg font-semibold mb-1">Debit Amount</label>
+            <label className="block text-lg font-semibold mb-1">
+              Debit Amount
+            </label>
             <input
               type="number"
               value={debitAmount}
@@ -257,8 +279,11 @@ const PayOut: React.FC = () => {
             />
           </div>
 
+          {/* Cash/Bank/Creditors Field */}
           <div>
-            <label className="block text-lg font-semibold mb-1">Cash/Bank/Creditors</label>
+            <label className="block text-lg font-semibold mb-1">
+              Cash/Bank/Creditors
+            </label>
             <select
               value={selectedParticulars}
               onChange={(e) => setSelectedParticulars(e.target.value)}
@@ -274,8 +299,11 @@ const PayOut: React.FC = () => {
             </select>
           </div>
 
+          {/* Credit Amount Field */}
           <div>
-            <label className="block text-lg font-semibold mb-1">Credit Amount</label>
+            <label className="block text-lg font-semibold mb-1">
+              Credit Amount
+            </label>
             <input
               type="number"
               value={creditAmount}
@@ -287,16 +315,19 @@ const PayOut: React.FC = () => {
           </div>
         </div>
 
+        {/* Remarks Field */}
         <div>
           <label className="block text-lg font-semibold mb-1">Remarks</label>
           <textarea
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
             className="border border-gray-300 rounded-md p-2 w-full"
+            rows={3}
             required
           />
         </div>
 
+        {/* Submit Button */}
         <button
           type="submit"
           disabled={isSubmitting}
@@ -304,6 +335,8 @@ const PayOut: React.FC = () => {
         >
           {isSubmitting ? "Processing..." : "Submit"}
         </button>
+
+        {/* Error Message */}
         {error && <p className="text-red-500 mt-2">{error}</p>}
       </form>
 

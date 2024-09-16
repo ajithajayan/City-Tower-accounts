@@ -224,8 +224,9 @@ const PayIn: React.FC = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
+        <div className="flex justify-between gap-4">
+          {/* Date Field */}
+          <div className="flex-1 max-w-xs">
             <label className="block text-lg font-semibold mb-1 text-white">
               Date
             </label>
@@ -238,7 +239,8 @@ const PayIn: React.FC = () => {
             />
           </div>
 
-          <div>
+          {/* Reference No. Field */}
+          <div className="flex-1 max-w-xs">
             <label className="block text-lg font-semibold mb-1 text-white">
               Reference No.
             </label>
@@ -249,7 +251,10 @@ const PayIn: React.FC = () => {
               className="border border-gray-300 rounded-md p-2 w-full"
             />
           </div>
+        </div>
 
+        {/* Rest of the form */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-lg font-semibold mb-1 text-white">
               Cash/Bank
