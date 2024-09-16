@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import ReactToPrint from "react-to-print";
 import { api } from "@/services/api";
 import EditTransactionModal from '@/components/modals/EditShareUserTransactionModal';
 import PaymentModal from "../modals/SharePaymentModal";
-import SharePaymentHistoryModal from '@/components/modals/SharePaymentHistoryModal'; // Import the new modal
+import SharePaymentHistoryModal from '@/components/modals/SharePaymentHistoryModal';
 
-// Define the types for Share User and Transaction
 interface ShareUser {
   id: number;
   name: string;
@@ -39,7 +39,9 @@ const IndividualReport: React.FC = () => {
   const [selectedUserId, setSelectedUserId] = useState<number>(0);
   const [selectedTransactionId, setSelectedTransactionId] = useState<number>(0);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState<boolean>(false); // State for the payment history modal
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState<boolean>(false);
+
+  const componentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchShareUsers = async () => {
@@ -88,7 +90,6 @@ const IndividualReport: React.FC = () => {
     setIsHistoryModalOpen(true);
   };
 
-  // Calculate the grand totals for percentage_amount, balance_amount, and paid_amount
   const totalPercentageAmount = transactions.reduce((sum, transaction) => sum + parseFloat(transaction.percentage_amount || '0'), 0);
   const totalBalanceAmount = transactions.reduce((sum, transaction) => sum + parseFloat(transaction.balance_amount || '0'), 0);
   const totalPaidAmount = transactions.reduce((sum, transaction) => {
@@ -121,99 +122,106 @@ const IndividualReport: React.FC = () => {
       {loading && <p>Loading transactions...</p>}
 
       {!loading && transactions.length > 0 && (
-        <table className="table-auto w-full border-collapse border">
-          <thead>
-            <tr>
-              <th className="border px-4 py-2">Transaction No</th>
-              <th className="border px-4 py-2">Date</th>
-              <th className="border px-4 py-2">Period From</th>
-              <th className="border px-4 py-2">Period To</th>
-              <th className="border px-4 py-2">Profit/Loss</th>
-              <th className="border px-4 py-2">Percentage</th>
-              <th className="border px-4 py-2">Percentage Amount</th>
-              <th className="border px-4 py-2">Balance Amount</th>
-              <th className="border px-4 py-2">Paid Amount</th>
-              <th className="border px-4 py-2">Pay</th>
-              <th className="border px-4 py-2">Payment History</th> {/* New column */}
-              <th className="border px-4 py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.map((transaction) => {
-              const paidAmount = transaction.balance_amount === "0"
-                ? 0
-                : parseFloat(transaction.percentage_amount) - parseFloat(transaction.balance_amount);
+        <>
+          <ReactToPrint
+            trigger={() => <button className="bg-blue-500 text-white px-4 py-2 rounded mb-4">Print Report</button>}
+            content={() => componentRef.current}
+          />
 
-              return (
-                <tr key={transaction.transaction.id}>
-                  <td className="border px-4 py-2">{transaction.transaction.transaction_no}</td>
-                  <td className="border px-4 py-2">{new Date(transaction.transaction.created_date).toLocaleDateString()}</td>
-                  <td className="border px-4 py-2">{transaction.transaction.period_from}</td>
-                  <td className="border px-4 py-2">{transaction.transaction.period_to}</td>
-                  <td className="border px-4 py-2">{transaction.profit_lose}</td>
-                  <td className="border px-4 py-2">{transaction.percentage}%</td>
-                  <td className="border px-4 py-2">{transaction.percentage_amount}</td>
-                  <td className="border px-4 py-2">{transaction.balance_amount}</td>
-                  <td className="border px-4 py-2">{paidAmount.toFixed(2)}</td>
-
-                  <td className="border px-4 py-2">
-                    <button
-                      className="bg-green-500 text-white px-2 py-1 rounded"
-                      onClick={() => handlePayment(transaction.id)}
-                    >
-                      Pay
-                    </button>
-                  </td>
-
-                  <td className="border px-4 py-2">
-                    <button
-                      className="bg-yellow-500 text-white px-2 py-1 rounded"
-                      onClick={() => handleViewPaymentHistory(transaction.id)}
-                    >
-                      View
-                    </button>
-                  </td>
-
-                  <td className="border px-4 py-2">
-                    <button
-                      className="bg-blue-500 text-white px-2 py-1 rounded"
-                      onClick={() => handleEditTransaction(transaction.id, selectedUserId)}
-                    >
-                      Edit
-                    </button>
-                  </td>
+          <div ref={componentRef}>
+            <table className="table-auto w-full border-collapse border">
+              <thead>
+                <tr>
+                  <th className="border px-4 py-2">Transaction No</th>
+                  <th className="border px-4 py-2">Date</th>
+                  <th className="border px-4 py-2">Period From</th>
+                  <th className="border px-4 py-2">Period To</th>
+                  <th className="border px-4 py-2">Profit/Loss</th>
+                  <th className="border px-4 py-2">Percentage</th>
+                  <th className="border px-4 py-2">Percentage Amount</th>
+                  <th className="border px-4 py-2">Balance Amount</th>
+                  <th className="border px-4 py-2">Paid Amount</th>
+                  <th className="border px-4 py-2">Pay</th>
+                  <th className="border px-4 py-2">Payment History</th>
+                  <th className="border px-4 py-2">Actions</th>
                 </tr>
-              );
-            })}
+              </thead>
+              <tbody>
+                {transactions.map((transaction) => {
+                  const paidAmount = transaction.balance_amount === "0"
+                    ? 0
+                    : parseFloat(transaction.percentage_amount) - parseFloat(transaction.balance_amount);
 
-            {/* Grand total row */}
-            <tr>
-              <th className="border px-4 py-2 font-semibold">Total</th>
-              <td className="border px-4 py-2"></td>
-              <td className="border px-4 py-2"></td>
-              <td className="border px-4 py-2"></td>
-              <td className="border px-4 py-2"></td>
-              <td className="border px-4 py-2"></td>
-              <td className="border px-4 py-2 font-semibold">{totalPercentageAmount.toFixed(2)}</td>
-              <td className="border px-4 py-2 font-semibold">{totalBalanceAmount.toFixed(2)}</td>
-              <td className="border px-4 py-2 font-semibold">{totalPaidAmount.toFixed(2)}</td>
-              <td className="border px-4 py-2"></td>
-              <td className="border px-4 py-2"></td>
-              <td className="border px-4 py-2"></td>
-            </tr>
-          </tbody>
-        </table>
+                  return (
+                    <tr key={transaction.transaction.id}>
+                      <td className="border px-4 py-2">{transaction.transaction.transaction_no}</td>
+                      <td className="border px-4 py-2">{new Date(transaction.transaction.created_date).toLocaleDateString()}</td>
+                      <td className="border px-4 py-2">{transaction.transaction.period_from}</td>
+                      <td className="border px-4 py-2">{transaction.transaction.period_to}</td>
+                      <td className="border px-4 py-2">{transaction.profit_lose}</td>
+                      <td className="border px-4 py-2">{transaction.percentage}%</td>
+                      <td className="border px-4 py-2">{transaction.percentage_amount}</td>
+                      <td className="border px-4 py-2">{transaction.balance_amount}</td>
+                      <td className="border px-4 py-2">{paidAmount.toFixed(2)}</td>
+
+                      <td className="border px-4 py-2">
+                        <button
+                          className="bg-green-500 text-white px-2 py-1 rounded"
+                          onClick={() => handlePayment(transaction.id)}
+                        >
+                          Pay
+                        </button>
+                      </td>
+
+                      <td className="border px-4 py-2">
+                        <button
+                          className="bg-yellow-500 text-white px-2 py-1 rounded"
+                          onClick={() => handleViewPaymentHistory(transaction.id)}
+                        >
+                          View
+                        </button>
+                      </td>
+
+                      <td className="border px-4 py-2">
+                        <button
+                          className="bg-blue-500 text-white px-2 py-1 rounded"
+                          onClick={() => handleEditTransaction(transaction.id, selectedUserId)}
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                <tr>
+                  <th className="border px-4 py-2 font-semibold">Total</th>
+                  <td className="border px-4 py-2"></td>
+                  <td className="border px-4 py-2"></td>
+                  <td className="border px-4 py-2"></td>
+                  <td className="border px-4 py-2"></td>
+                  <td className="border px-4 py-2"></td>
+                  <td className="border px-4 py-2 font-semibold">{totalPercentageAmount.toFixed(2)}</td>
+                  <td className="border px-4 py-2 font-semibold">{totalBalanceAmount.toFixed(2)}</td>
+                  <td className="border px-4 py-2 font-semibold">{totalPaidAmount.toFixed(2)}</td>
+                  <td className="border px-4 py-2"></td>
+                  <td className="border px-4 py-2"></td>
+                  <td className="border px-4 py-2"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
-      {/* Modals */}
       {isModalOpen && (
         <EditTransactionModal
-        selectedUserId={selectedUserId}
-        transactionId={selectedTransactionId}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        refreshTransactions={() => fetchTransactions(selectedUserId)}
-      />
+          selectedUserId={selectedUserId}
+          transactionId={selectedTransactionId}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          refreshTransactions={() => fetchTransactions(selectedUserId)}
+        />
       )}
 
       {isPaymentModalOpen && (

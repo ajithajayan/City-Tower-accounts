@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
+import ReactToPrint from "react-to-print";
 import { api } from "@/services/api";
 
 interface Transaction {
@@ -25,6 +26,8 @@ const CashCountSheet: React.FC = () => {
   const [toDate, setToDate] = useState<string>(today);
   const [filteredData, setFilteredData] = useState<Transaction[]>([]);
   const [isSearched, setIsSearched] = useState(false);
+
+  const componentRef = useRef<HTMLDivElement>(null);
 
   // Fetch data from API
   const fetchData = async () => {
@@ -131,8 +134,13 @@ const CashCountSheet: React.FC = () => {
         </div>
       </div>
 
+      <ReactToPrint
+        trigger={() => <button className="bg-green-600 text-white py-2 px-6 rounded-lg shadow hover:bg-green-700">Print Table</button>}
+        content={() => componentRef.current}
+      />
+
       {isSearched && filteredData.length > 0 ? (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" ref={componentRef}>
           <table className="min-w-full bg-white shadow-md rounded-lg">
             <thead>
               <tr>

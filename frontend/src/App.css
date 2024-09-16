@@ -48,3 +48,32 @@
 .invisible-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: #00000037;
 }
+
+
+@media print {
+  /* Hide elements that should not be printed */
+  .print-section button {
+    display: none;
+  }
+
+  /* Ensure the table is displayed correctly */
+  .print-section {
+    margin: 0;
+    padding: 0;
+    background: none;
+  }
+
+  .print-section table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .print-section th, .print-section td {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+
+  .print-section th {
+    background-color: #f2f2f2;
+  }
+}
