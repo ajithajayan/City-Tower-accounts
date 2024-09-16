@@ -209,7 +209,22 @@ const SalesEntryPage: React.FC = () => {
                 .then(response => {
                     console.log('Transaction successful:', response.data);
                     setIsSubmitting(false);
-                    // You can also handle UI updates or reset the form here
+                    setDate("");
+                    setSelectedCash("");
+                    setSelectedBank("");
+                    setSelectedSaleParticulars("");
+                    setSelectedPurchaseParticulars("");
+                    setselectedPurchase("");
+                    setCashDebitAmount("");
+                    setBankDebitAmount("");
+                    setPurchaseDebitAmount("");
+                    setSaleCreditAmount("");
+                    setPurchaseCashCreditAmount("");
+                    setRemarks("");
+                    setRefNo("");
+        
+                    // You can also add a success message or redirection here
+                    alert("Form submitted successfully!");
                 })
                 .catch(error => {
                     console.error('Error submitting transaction:', error);

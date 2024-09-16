@@ -84,7 +84,7 @@ class ShareUserTransactionSerializer(serializers.ModelSerializer):
     share_user_data = ShareUserSerializer(source='share_user', read_only=True)
     class Meta:
         model = ShareUserTransaction
-        fields = ['share_user', 'share_user_data','profit_lose', 'percentage', 'amount','percentage_amount']
+        fields = ['share_user', 'share_user_data','profit_lose', 'percentage', 'amount','percentage_amount','balance_amount']
 
 class ProfitLossShareTransactionSerializer(serializers.ModelSerializer):
     share_user_transactions = ShareUserTransactionSerializer(many=True)

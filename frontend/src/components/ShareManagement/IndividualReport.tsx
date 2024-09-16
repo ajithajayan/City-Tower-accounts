@@ -37,6 +37,7 @@ const IndividualReport: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedUserId, setSelectedUserId] = useState<number>(0);
+  const [selectedBalanceAmount, setSelectedBalanceAmount] = useState<string>('');
   const [selectedTransactionId, setSelectedTransactionId] = useState<number>(0);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState<boolean>(false);
@@ -80,7 +81,8 @@ const IndividualReport: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handlePayment = (transactionId: number) => {
+  const handlePayment = (transactionId: number,balanceAmount: string) => {
+    setSelectedBalanceAmount(balanceAmount);
     setSelectedTransactionId(transactionId);
     setIsPaymentModalOpen(true);
   };
@@ -170,7 +172,7 @@ const IndividualReport: React.FC = () => {
                     <td className="border px-4 py-2 print-hide">
                       <button
                         className="bg-green-500 text-white px-2 py-1 rounded"
-                        onClick={() => handlePayment(transaction.id)}
+                        onClick={() => handlePayment(transaction.id, transaction.balance_amount)}
                       >
                         Pay
                       </button>
@@ -231,6 +233,7 @@ const IndividualReport: React.FC = () => {
           isOpen={isPaymentModalOpen}
           onClose={() => setIsPaymentModalOpen(false)}
           transactionId={selectedTransactionId}
+          balanceAmount={selectedBalanceAmount}
           refreshTransactions={() => fetchTransactions(selectedUserId)}
         />
       )}

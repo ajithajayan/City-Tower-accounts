@@ -154,7 +154,8 @@ const ProfitLossShareTransaction: React.FC = () => {
                 profit_lose: section.profitLoss,
                 percentage: parseInt(section.percentage, 10),
                 amount: parseFloat(section.amount) || 0,
-                percentage_amount: parseFloat(section.percentage_amount) || 0
+                percentage_amount: parseFloat(section.percentage_amount) || 0,
+                balance_amount: parseFloat(section.percentage_amount) || 0
             }))
         };
 
