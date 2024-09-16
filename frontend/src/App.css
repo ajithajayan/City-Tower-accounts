@@ -77,3 +77,10 @@
     background-color: #f2f2f2;
   }
 }
+
+
+@media print {
+  .print-hide {
+    display: none;
+  }
+}

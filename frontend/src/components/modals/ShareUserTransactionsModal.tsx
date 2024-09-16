@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useRef } from "react";
+import ReactToPrint from 'react-to-print';
 
 // Define types inside the component file
 interface ShareUser {
@@ -8,7 +9,7 @@ interface ShareUser {
 }
 
 interface ShareUserTransaction {
-    share_user_data: ShareUser; // Change to match ProfitLoseShareReport.tsx
+    share_user_data: ShareUser;
     profit_lose: string;
     percentage: string;
     amount: string;
@@ -24,6 +25,8 @@ const ShareUserTransactionsModal: React.FC<ShareUserTransactionsModalProps> = ({
     transactions,
     onClose,
 }) => {
+    const componentRef = useRef<HTMLDivElement>(null);
+
     // Calculate total amount
     const totalAmount = transactions.reduce(
         (sum, transaction) => sum + parseFloat(transaction.amount),
@@ -44,7 +47,15 @@ const ShareUserTransactionsModal: React.FC<ShareUserTransactionsModalProps> = ({
                     &times;
                 </button>
                 <h2 className="text-xl font-bold mb-4">Share User Transactions</h2>
-                <div className="overflow-x-auto">
+
+                <div className="mb-4 flex justify-end">
+                    <ReactToPrint
+                        trigger={() => <button className="bg-blue-500 text-white px-4 py-2 rounded">Print</button>}
+                        content={() => componentRef.current}
+                    />
+                </div>
+
+                <div className="overflow-x-auto" ref={componentRef}>
                     <table className="min-w-full divide-y divide-gray-200 mt-4">
                         <thead className="bg-gray-50">
                             <tr>
@@ -74,7 +85,7 @@ const ShareUserTransactionsModal: React.FC<ShareUserTransactionsModalProps> = ({
                                 <td colSpan={4} className="px-6 py-4 text-sm font-bold text-gray-900 text-right">
                                     {totalAmount.toFixed(2)}
                                 </td>
-                                <td colSpan={4} className="px-6 py-4 text-sm font-bold text-gray-900 text-right">
+                                <td colSpan={2} className="px-6 py-4 text-sm font-bold text-gray-900 text-right">
                                     {totalPercentage.toFixed(2)}
                                 </td>
                             </tr>
