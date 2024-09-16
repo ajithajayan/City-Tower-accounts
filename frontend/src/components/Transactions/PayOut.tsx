@@ -261,8 +261,19 @@ const PayOut: React.FC = () => {
             </select>
           </div>
 
+
           <div>
-            <label className="block mb-2 text-lg font-bold">Particulars</label>
+            <label className="block mb-2 text-lg font-bold">Debit Amount</label>
+            <input
+              type="number"
+              value={debitAmount}
+              onChange={(e) => setDebitAmount(e.target.value)}
+              className="border rounded p-2 w-full"
+              required
+            />
+          </div>
+          <div>
+            <label className="block mb-2 text-lg font-bold">Cash/Bank/Creditors</label>
             <select
               value={selectedParticulars}
               onChange={(e) => setSelectedParticulars(e.target.value)}
@@ -277,18 +288,6 @@ const PayOut: React.FC = () => {
               ))}
             </select>
           </div>
-
-          <div>
-            <label className="block mb-2 text-lg font-bold">Debit Amount</label>
-            <input
-              type="number"
-              value={debitAmount}
-              onChange={(e) => setDebitAmount(e.target.value)}
-              className="border rounded p-2 w-full"
-              required
-            />
-          </div>
-
           <div>
             <label className="block mb-2 text-lg font-bold">Credit Amount</label>
             <input
@@ -321,11 +320,8 @@ const PayOut: React.FC = () => {
         {error && <p className="text-red-500 mt-2">{error}</p>}
       </form>
 
-      <LedgerCreationModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onLedgerCreated={refreshLedgerOptions}
-      />
+      <LedgerCreationModal isOpen={isModalOpen} refreshLedgerOptions={refreshLedgerOptions} onClose={handleCloseModal} />
+
 
       <CashCountSheetModal
         isOpen={isCashCountModalOpen} // Open CashCountSheetModal when triggered

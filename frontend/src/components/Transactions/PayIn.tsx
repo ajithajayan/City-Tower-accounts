@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import LedgerCreationModal from "@/components/modals/LedgerCreationModal";
-import CashCountSheet from "@/components/modals/CashCountSheet"; // Import CashCountSheet Modal
 import { api } from "@/services/api";
 import CashCountSheetModal from "../modals/CashCountSheetModal";
 
@@ -108,7 +107,7 @@ const PayIn: React.FC = () => {
       credit_amount: creditAmount ? parseFloat(creditAmount) : 0,
       remarks,
       debit_credit: "credit",
-      transaction_type: 'payin'
+      transaction_type: 'payin',
       cash_count: cashCountValues, // Include cash count values
     };
   
@@ -125,7 +124,7 @@ const PayIn: React.FC = () => {
     };
   
     // Format Cash Count Values for the CashCount API (if applicable)
-    const cashCountRequestData = cashCountValues?.map(item => ({
+    const cashCountRequestData = cashCountValues?.map((item: { currency: any; nos: any; amount: any; }) => ({
       currency: item.currency,
       nos: item.nos,
       amount: item.amount,

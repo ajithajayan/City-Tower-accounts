@@ -112,68 +112,83 @@ const SalesEntryPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (isSubmitting) return;
-    
+
         setIsSubmitting(true);
         setError(null);
-    
-        const requestData = {
-            transaction_type: 'salesentry', // Add this line to specify the transaction type
-            salescashtransaction1: {
+
+
+        // Initialize an empty object to store request data
+        let requestData: { [key: string]: any } = {
+            transaction_type: 'salesentry', // Specify the transaction type
+        };
+
+        // Conditional Sales Cash Transactions - both debit and credit must be non-zero
+        if (parseFloat(cashdebitAmount) && parseFloat(salecreditAmount)) {
+            requestData.salescashtransaction1 = {
                 ledger_id: selectedCash,
                 particulars_id: selectedSaleParticulars,
                 date,
-                debit_amount: parseFloat(cashdebitAmount) || 0,
+                debit_amount: parseFloat(cashdebitAmount),
                 credit_amount: 0,
                 remarks,
                 debit_credit: "debit",
-            },
-            salescashtransaction2: {
+            };
+            requestData.salescashtransaction2 = {
                 ledger_id: selectedSaleParticulars,
                 particulars_id: selectedCash,
                 date,
                 debit_amount: 0,
-                credit_amount: parseFloat(salecreditAmount) || 0,
+                credit_amount: parseFloat(salecreditAmount),
                 remarks,
                 debit_credit: "credit",
-            },
-            salesbanktransaction1: {
+            };
+        }
+
+        // Conditional Sales Bank Transactions - both debit and credit must be non-zero
+        if (parseFloat(bankdebitAmount) && parseFloat(salecreditAmount)) {
+            requestData.salesbanktransaction1 = {
                 ledger_id: selectedBank,
                 particulars_id: selectedSaleParticulars,
                 date,
-                debit_amount: parseFloat(bankdebitAmount) || 0,
+                debit_amount: parseFloat(bankdebitAmount),
                 credit_amount: 0,
                 remarks,
                 debit_credit: "debit",
-            },
-            salesbanktransaction2: {
+            };
+            requestData.salesbanktransaction2 = {
                 ledger_id: selectedSaleParticulars,
                 particulars_id: selectedBank,
                 date,
                 debit_amount: 0,
-                credit_amount: parseFloat(salecreditAmount) || 0,
+                credit_amount: parseFloat(salecreditAmount),
                 remarks,
                 debit_credit: "credit",
-            },
-            purchasetransaction1: {
+            };
+        }
+
+        // Conditional Purchase Transactions - both debit and credit must be non-zero
+        if (parseFloat(purchasedebitAmount) && parseFloat(purchaseCashcreditAmount)) {
+            requestData.purchasetransaction1 = {
                 ledger_id: selectedPurchase,
                 particulars_id: selectedPurchaseParticulars,
                 date,
-                debit_amount: parseFloat(purchasedebitAmount) || 0,
+                debit_amount: parseFloat(purchasedebitAmount),
                 credit_amount: 0,
                 remarks,
                 debit_credit: "debit",
-            },
-            purchasetransaction2: {
+            };
+            requestData.purchasetransaction2 = {
                 ledger_id: selectedPurchaseParticulars,
                 particulars_id: selectedPurchase,
                 date,
                 debit_amount: 0,
-                credit_amount: parseFloat(purchaseCashcreditAmount) || 0,
+                credit_amount: parseFloat(purchaseCashcreditAmount),
                 remarks,
                 debit_credit: "credit",
-            },
-        };
-    
+            };
+        }
+
+
         if (refNo.trim() !== "") {
             Object.values(requestData).forEach(transaction => {
                 if (typeof transaction === 'object') {
@@ -181,18 +196,25 @@ const SalesEntryPage: React.FC = () => {
                 }
             });
         }
-    console.log("requsested data",requestData);
-    
-        try {
-            const response = await api.post("/transactions/", requestData);
-            console.log("Transactions successful", response.data);
-            // Reset form fields
-            // ...
-        } catch (error) {
-            console.error("There was an error posting the transactions!", error);
-            setError("There was an error submitting the transactions. Please try again.");
-        } finally {
-            setIsSubmitting(false);
+        console.log("requsested data", requestData);
+
+
+        console.log("requestedData :", requestData);
+
+        if (Object.keys(requestData).length > 1) { // Length > 1 because 'transaction_type' is always present
+            // Send the requestData to the API
+            api.post('/transactions/', requestData)  // Adjust the endpoint if needed
+                .then(response => {
+                    console.log('Transaction successful:', response.data);
+                    setIsSubmitting(false);
+                    // You can also handle UI updates or reset the form here
+                })
+                .catch(error => {
+                    console.error('Error submitting transaction:', error);
+                    // You can show an error message to the user or handle specific error codes here
+                });
+        } else {
+            console.log('No data to send. Please fill out the required fields.');
         }
     };
 
@@ -301,7 +323,7 @@ const SalesEntryPage: React.FC = () => {
                                 value={selectedSaleParticulars}
                                 onChange={(e) => setSelectedSaleParticulars(e.target.value)}
                                 className="border rounded p-2 w-full"
-                                required
+                            // required
                             >
                                 <option value="">Select an account</option>
                                 {ledgerOptions
@@ -324,17 +346,17 @@ const SalesEntryPage: React.FC = () => {
                                 onChange={(e) => setSaleCreditAmount(e.target.value)}
                                 className="border rounded p-2 w-full"
                                 step="0.01"
-                                required
+                            // required
                             />
                         </div>
 
                         <div>
                             <label className="block mb-2 text-lg font-bold">Cash</label>
                             <select
-                                value={selectedPurchaseParticulars}
+                                value={selectedCash}
                                 onChange={(e) => setSelectedCash(e.target.value)}
                                 className="border rounded p-2 w-full"
-                                required
+                            // required
                             >
                                 <option value="">Select an account</option>
                                 {ledgerOptions
@@ -357,7 +379,7 @@ const SalesEntryPage: React.FC = () => {
                                 onChange={(e) => setCashDebitAmount(e.target.value)}
                                 className="border rounded p-2 w-full"
                                 step="0.01"
-                                required
+                            // required
                             />
                         </div>
 
@@ -367,7 +389,7 @@ const SalesEntryPage: React.FC = () => {
                                 value={selectedBank}
                                 onChange={(e) => setSelectedBank(e.target.value)}
                                 className="border rounded p-2 w-full"
-                                required
+                            // required
                             >
                                 <option value="">Select an account</option>
                                 {ledgerOptions
@@ -390,7 +412,7 @@ const SalesEntryPage: React.FC = () => {
                                 onChange={(e) => setBankDebitAmount(e.target.value)}
                                 className="border rounded p-2 w-full"
                                 step="0.01"
-                                required
+                            // required
                             />
                         </div>
                         {/* SalesSectionEnd */}
@@ -403,7 +425,7 @@ const SalesEntryPage: React.FC = () => {
                                 value={selectedPurchase}
                                 onChange={(e) => setselectedPurchase(e.target.value)}
                                 className="border rounded p-2 w-full"
-                                required
+                            // required
                             >
                                 <option value="">Select an account</option>
                                 {ledgerOptions
@@ -426,7 +448,7 @@ const SalesEntryPage: React.FC = () => {
                                 onChange={(e) => setPurchaseDebitAmount(e.target.value)}
                                 className="border rounded p-2 w-full"
                                 step="0.01"
-                                required
+                            // required
                             />
                         </div>
 
@@ -436,7 +458,7 @@ const SalesEntryPage: React.FC = () => {
                                 value={selectedPurchaseParticulars}
                                 onChange={(e) => setSelectedPurchaseParticulars(e.target.value)}
                                 className="border rounded p-2 w-full"
-                                required
+                            // required
                             >
                                 <option value="">Select an account</option>
                                 {ledgerOptions
@@ -459,7 +481,7 @@ const SalesEntryPage: React.FC = () => {
                                 onChange={(e) => setPurchaseCashCreditAmount(e.target.value)}
                                 className="border rounded p-2 w-full"
                                 step="0.01"
-                                required
+                            // required
                             />
                         </div>
 

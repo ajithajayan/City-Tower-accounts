@@ -2,6 +2,8 @@ from django.db import models
 from django.utils import timezone
 import datetime
 from decimal import Decimal
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 
 
 class NatureGroup(models.Model): # This gorup as main group
@@ -163,9 +165,38 @@ class ShareUserTransaction(models.Model):
     profit_lose = models.CharField(max_length=10, choices=PROFIT_LOSS_CHOICES)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     percentage_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    balance_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
 
     def __str__(self):
         return f'{self.share_user.name} - {self.transaction.transaction_no}'
+
+class SharePaymentHistory(models.Model):
+    share_user_transaction = models.ForeignKey(
+        'ShareUserTransaction',
+        related_name='payment_histories',
+        on_delete=models.CASCADE
+    )
+    is_paid = models.BooleanField(default=False)
+    paid_date = models.DateField(blank=True, null=True)
+    paid_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+
+    def __str__(self):
+        return f"Payment History ID {self.id} for Transaction ID {self.share_user_transaction.id}"
+
+@receiver(post_save, sender=SharePaymentHistory)
+def update_share_user_transaction(sender, instance, **kwargs):
+    share_user_transaction = instance.share_user_transaction
+    if share_user_transaction:
+        # Subtract the paid amount from the balance amount
+        share_user_transaction.balance_amount -= instance.paid_amount
+
+        # Check if the balance amount is zero or less, and update is_paid status
+        if share_user_transaction.balance_amount <= Decimal('0.00'):
+            share_user_transaction.balance_amount = Decimal('0.00')
+            share_user_transaction.is_paid = True
+
+        # Save the updated ShareUserTransaction instance
+        share_user_transaction.save()
 
 
 class CashCountSheet(models.Model):

@@ -1,142 +1,183 @@
 import React, { useState, useEffect } from "react";
-import { api } from "@/services/api"; // Assuming you have an API service file
+import { api } from "@/services/api";
 
-interface CashCountSheetData {
-    id: number;
-    created_date: string;
+interface Transaction {
+  created_date: string;
+  transaction_type: string;
+  amount: string;
+  items: Array<{
     currency: number;
     nos: number;
-    amount: string;
+  }>;
+}
+
+type Denomination = 500 | 200 | 100 | 50 | 10 | 5 | 1;
+
+interface GrandTotal {
+  cashCount: Record<Denomination, number>;
+  total: number;
 }
 
 const CashCountSheet: React.FC = () => {
-    const [data, setData] = useState<CashCountSheetData[]>([]);
-    const [currentPage, setCurrentPage] = useState<number>(1);
-    const [totalPages, setTotalPages] = useState<number>(1);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
-    const [fromDate, setFromDate] = useState<string>("");
-    const [toDate, setToDate] = useState<string>("");
-    const [searchPerformed, setSearchPerformed] = useState<boolean>(false);
+  const today = new Date().toISOString().split("T")[0];
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                let url = `/cashcount-sheet/?page=${currentPage}`;
-                if (searchPerformed && fromDate && toDate) {
-                    url += `&from_date=${fromDate}&to_date=${toDate}`;
-                }
-                const response = await api.get(url);
-                setData(response.data.results);
-                setTotalPages(Math.ceil(response.data.count / 10));
-            } catch (err) {
-                setError("Failed to fetch data.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
+  const [fromDate, setFromDate] = useState<string>("2024-09-01");
+  const [toDate, setToDate] = useState<string>(today);
+  const [filteredData, setFilteredData] = useState<Transaction[]>([]);
+  const [isSearched, setIsSearched] = useState(false);
 
-        fetchData();
-    }, [currentPage, fromDate, toDate, searchPerformed]);
+  // Fetch data from API
+  const fetchData = async () => {
+    try {
+      const response = await api.get("/cashsheet/");
+      const data = response.data.results;
+      if (Array.isArray(data)) {
+        setFilteredData(data);
+      } else {
+        console.error("Unexpected data format:", data);
+        setFilteredData([]);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
 
-    const handlePageChange = (page: number) => {
-        setCurrentPage(page);
-    };
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-    const handleSearch = () => {
-        setSearchPerformed(true);
-        setCurrentPage(1); // Reset to first page on new search
-    };
+  const handleSearch = () => {
+    setIsSearched(true);
+    // Filter data by date range
+    const filteredTransactions = filteredData.filter((transaction) => {
+      const transactionDate = new Date(transaction.created_date);
+      const startDate = new Date(fromDate);
+      const endDate = new Date(toDate);
+      return transactionDate >= startDate && transactionDate <= endDate;
+    });
 
-    // Calculate the grand total of all amounts
-    const calculateGrandTotal = () => {
-        return data.reduce((total, item) => total + parseFloat(item.amount), 0).toFixed(2);
-    };
+    // Group transactions by date
+    const groupedTransactions = filteredTransactions.reduce((acc: Record<string, Transaction[]>, transaction) => {
+      const date = transaction.created_date;
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(transaction);
+      return acc;
+    }, {});
 
-    return (
-        <div>
-            <h1 className="text-2xl font-bold mb-2">Cash Count Sheet</h1>
-
-            {/* Search Section */}
-            <div className="mb-6 p-4 border border-gray-300 rounded bg-gray-50">
-                <h2 className="text-xl font-semibold mb-2">Filter Options</h2>
-                <div className="flex flex-wrap items-center">
-                    <div className="mb-4 sm:mb-0 sm:mr-4 flex-1">
-                        <label className="block mb-1">From Date:</label>
-                        <input
-                            type="date"
-                            value={fromDate}
-                            onChange={(e) => setFromDate(e.target.value)}
-                            className="px-2 py-1 border border-gray-300 rounded w-full"
-                        />
-                    </div>
-                    <div className="mb-4 sm:mb-0 sm:mr-4 flex-1">
-                        <label className="block mb-1">To Date:</label>
-                        <input
-                            type="date"
-                            value={toDate}
-                            onChange={(e) => setToDate(e.target.value)}
-                            className="px-2 py-1 border border-gray-300 rounded w-full"
-                        />
-                    </div>
-                    <div className="flex-shrink-0">
-                        <button
-                            onClick={handleSearch}
-                            className="bg-blue-500 text-white px-4 py-2 rounded"
-                        >
-                            Search
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Table Section */}
-            {searchPerformed && (
-                <>
-                    {isLoading && <p>Loading...</p>}
-                    {error && <p className="text-red-500">{error}</p>}
-                    {data.length > 0 ? (
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200 table-fixed">
-                                <thead>
-                                    <tr>
-                                        <th className="px-6 py-3 bg-gray-50 text-left">ID</th>
-                                        <th className="px-6 py-3 bg-gray-50 text-left">Date</th>
-                                        <th className="px-6 py-3 bg-gray-50 text-left">Currency</th>
-                                        <th className="px-6 py-3 bg-gray-50 text-left">Nos</th>
-                                        <th className="px-6 py-3 bg-gray-50 text-left">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {data.map((item) => (
-                                        <tr key={item.id}>
-                                            <td className="px-6 py-4 text-left">{item.id}</td>
-                                            <td className="px-6 py-4 text-left">{item.created_date}</td>
-                                            <td className="px-6 py-4 text-left">{item.currency}</td>
-                                            <td className="px-6 py-4 text-left">{item.nos}</td>
-                                            <td className="px-6 py-4 text-left">{item.amount}</td>
-                                        </tr>
-                                    ))}
-                                    {/* Grand Total Row */}
-                                    <tr>
-                                        <td className="px-6 py-4 font-semibold text-left" colSpan={4}>
-                                            Grand Total
-                                        </td>
-                                        <td className="px-6 py-4 font-semibold text-left">
-                                            {calculateGrandTotal()}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    ) : (
-                        <p>No data available for the selected date range.</p>
-                    )}
-                </>
-            )}
-        </div>
+    // Flatten and sort grouped transactions
+    const sortedGroupedTransactions = Object.entries(groupedTransactions).flatMap(([, transactions]) =>
+      transactions.sort((a, b) =>
+        a.transaction_type.localeCompare(b.transaction_type)
+      )
     );
+
+    setFilteredData(sortedGroupedTransactions);
+  };
+
+  // Grand total calculation with transaction type (payin/payout)
+  const grandTotal: GrandTotal = filteredData.reduce(
+    (acc, item) => {
+      const multiplier = item.transaction_type === "payin" ? 1 : -1;
+      item.items.forEach(({ currency, nos }) => {
+        if (currency in acc.cashCount) {
+          acc.cashCount[currency as Denomination] += nos * multiplier;
+        }
+      });
+      acc.total += parseFloat(item.amount) * multiplier;
+      return acc;
+    },
+    {
+      cashCount: { 500: 0, 200: 0, 100: 0, 50: 0, 10: 0, 5: 0, 1: 0 },
+      total: 0,
+    }
+  );
+
+  const denominations: Denomination[] = [500, 200, 100, 50, 10, 5, 1];
+
+  return (
+    <div className="p-6 bg-blue-200">
+      <h1 className="text-2xl font-bold mb-4">Cash Count Sheet</h1>
+
+      <div className="bg-white p-6 shadow-md rounded-lg mb-6">
+        <div className="flex flex-wrap gap-4 items-end">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="block w-full py-2 px-4 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none"
+            />
+          </div>
+
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="block w-full py-2 px-4 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none"
+            />
+          </div>
+
+          <button
+            onClick={handleSearch}
+            className="bg-blue-600 text-white py-2 px-6 rounded-lg shadow hover:bg-blue-700"
+          >
+            Search
+          </button>
+        </div>
+      </div>
+
+      {isSearched && filteredData.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white shadow-md rounded-lg">
+            <thead>
+              <tr>
+                <th className="py-3 px-4 bg-gray-100 text-left text-sm font-medium text-gray-600">Date</th>
+                <th className="py-3 px-4 bg-gray-100 text-left text-sm font-medium text-gray-600">Transaction Type</th>
+                {denominations.map((denom) => (
+                  <th key={denom} className="py-3 px-4 bg-gray-100 text-center text-sm font-medium text-gray-600">{denom}</th>
+                ))}
+                <th className="py-3 px-4 bg-gray-100 text-right text-sm font-medium text-gray-600">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredData.map((transaction, index) => (
+                <tr key={index}>
+                  <td className="py-2 px-4 border-b text-left text-sm text-gray-700">{transaction.created_date}</td>
+                  <td className="py-2 px-4 border-b text-left text-sm text-gray-700">{transaction.transaction_type}</td>
+                  {denominations.map((denom) => (
+                    <td key={denom} className="py-2 px-4 border-b text-center text-sm text-gray-700">
+                      {transaction.items.find(item => item.currency === denom)?.nos || 0}
+                    </td>
+                  ))}
+                  <td className="py-2 px-4 border-b text-right text-sm text-gray-700">{transaction.amount}</td>
+                </tr>
+              ))}
+
+              {/* Grand Total Row */}
+              <tr>
+                <td colSpan={2} className="py-2 px-4 text-left text-sm font-semibold text-black">Grand Total</td>
+                {denominations.map((denom) => (
+                  <td key={denom} className="py-2 px-4 text-center text-sm font-semibold text-black">
+                    {grandTotal.cashCount[denom]}
+                  </td>
+                ))}
+                <td className="py-2 px-4 text-right text-sm font-semibold text-black">{grandTotal.total.toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      ) : isSearched ? (
+        <p>No transactions found for the selected date range.</p>
+      ) : (
+        <p>Please select a date range and click 'Search' to view the transactions.</p>
+      )}
+    </div>
+  );
 };
 
 export default CashCountSheet;

@@ -2,7 +2,8 @@ from rest_framework import serializers
 from .models import (
     NatureGroup,
     MainGroup,
-    Ledger, 
+    Ledger,
+    SharePaymentHistory, 
     Transaction,
     IncomeStatement,
     BalanceSheet,
@@ -125,6 +126,10 @@ class ProfitLossShareTransactionSerializer(serializers.ModelSerializer):
         
         return transaction
 
+class ShareUserTransactionViewSetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShareUserTransaction
+        fields = ['transaction', 'share_user', 'percentage', 'profit_lose', 'amount', 'percentage_amount']
 
 class CashCountSheetItemsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -174,3 +179,23 @@ class CashCountSheetSerializer(serializers.ModelSerializer):
         
         return instance
 
+
+#individual Transaction
+class ProfitLossShareTransactionIndividualListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProfitLossShareTransaction
+        fields = ['transaction_no', 'created_date', 'period_from', 'period_to', 'total_percentage', 'total_amount', 'status', 'profit_amount', 'loss_amount']
+
+
+class ShareUserTransactionIndividualListSerializer(serializers.ModelSerializer):
+    transaction = ProfitLossShareTransactionIndividualListSerializer(read_only=True)
+    share_user_data = serializers.StringRelatedField(source='share_user', read_only=True)
+
+    class Meta:
+        model = ShareUserTransaction
+        fields = ['id','share_user_data', 'transaction', 'percentage', 'profit_lose', 'amount', 'percentage_amount','balance_amount']
+
+class SharePaymentHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SharePaymentHistory
+        fields = '__all__'

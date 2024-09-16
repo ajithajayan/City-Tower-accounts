@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import ShareManagementCreation from "@/components/ShareManagement/ShareManagementCreation";
 import ProfitLossShareTransaction from "@/components/ShareManagement/ProfitLoseShareTransaction";
 import ProfitLoseShareReport from "@/components/ShareManagement/ProfitLoseShareReport";
+import IndividualReport from "@/components/ShareManagement/IndividualReport";
 const ShareManagementPage: React.FC = () => {
     const [activeButton, setActiveButton] = useState("ShareManagementCreation");
 
@@ -17,6 +18,8 @@ const ShareManagementPage: React.FC = () => {
                 return <ProfitLossShareTransaction />
             case "ProfitLoseShareReport":
                 return <ProfitLoseShareReport />
+            case "IndividualReport":
+                return <IndividualReport />
             default:
                 return null;
         }
@@ -46,6 +49,13 @@ const ShareManagementPage: React.FC = () => {
                             onClick={() => handleButtonClick("ProfitLoseShareReport")}
                         >
                             ProfitLoseShareReport
+                        </button>
+                        <button
+                            className={`py-2 px-4 rounded ${activeButton === "IndividualReport" ? "bg-[#6f42c1] text-white transition-all" : "bg-purple-400 text-white hover:bg-purple-600"
+                                }`}
+                            onClick={() => handleButtonClick("IndividualReport")}
+                        >
+                            IndividualReport
                         </button>
                     </div>
                 </header>

@@ -38,7 +38,7 @@ from delivery_drivers.views import (
 )
 from transactions_app.views import (CashCountSheetViewSet, NatureGroupViewSet,
  MainGroupViewSet, 
- LedgerViewSet, 
+ LedgerViewSet, SharePaymentHistoryViewSet, ShareUserTransactionViewSet, 
  TransactionViewSet, 
  IncomeStatementViewSet, 
  BalanceSheetViewSet,
@@ -91,6 +91,8 @@ router.register(r'income-statements', IncomeStatementViewSet)
 router.register(r'balance-sheets', BalanceSheetViewSet)
 router.register(r'share-user-management', ShareUserManagementViewSet, basename="share-user-management")
 router.register(r'profit-loss-share-transactions',ProfitLossShareTransactionViewSet,basename='profit-loss-share-transactions')
+router.register(r'share-user-transactions', ShareUserTransactionViewSet)
+router.register(r'share-payment-history', SharePaymentHistoryViewSet)
 router.register(r'cashsheet', CashCountSheetViewSet, basename='cashsheet')
 
 urlpatterns = [
@@ -105,7 +107,7 @@ urlpatterns = [
     # Register the new Cancel Order API
     path("api/bills/<int:bill_id>/cancel_order/", CancelOrderByBillView.as_view(), name="cancel-order-by-bill"),
 
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)   
 
 if settings.DEBUG:
     static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

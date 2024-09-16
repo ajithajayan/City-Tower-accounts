@@ -7,7 +7,9 @@ from .models import (
     CashCountSheet,
     NatureGroup,
     MainGroup, 
-    Ledger, 
+    Ledger,
+    SharePaymentHistory,
+    ShareUserTransaction, 
     Transaction,
     IncomeStatement, 
     BalanceSheet,
@@ -17,7 +19,11 @@ from .serializers import (
      CashCountSheetSerializer,
      NatureGroupSerializer, 
      MainGroupSerializer, 
-     LedgerSerializer, 
+     LedgerSerializer,
+     SharePaymentHistorySerializer,
+     ShareUserTransactionIndividualListSerializer,
+     ShareUserTransactionSerializer,
+     ShareUserTransactionViewSetSerializer, 
      TransactionSerializer,
      IncomeStatementSerializer, 
      BalanceSheetSerializer,
@@ -137,21 +143,26 @@ class TransactionViewSet(viewsets.ModelViewSet):
         return Response(created_transactions, status=status.HTTP_201_CREATED)
 
     def handle_sales_entry(self, request):
+        # Define possible transaction keys
         transaction_keys = [
             'salescashtransaction1', 'salescashtransaction2',
             'salesbanktransaction1', 'salesbanktransaction2',
             'purchasetransaction1', 'purchasetransaction2'
         ]
         
-        if not all(key in request.data for key in transaction_keys):
-            return Response({"error": "All transaction data is required for Sales Entry."}, status=status.HTTP_400_BAD_REQUEST)
+        # Filter out the keys that are actually present in the request data
+        available_transaction_keys = [key for key in transaction_keys if key in request.data]
+        
+        if not available_transaction_keys:
+            return Response({"error": "At least one transaction is required for Sales Entry."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Generate the next voucher number
         last_transaction = Transaction.objects.order_by('-voucher_no').first()
         next_voucher_no = (last_transaction.voucher_no + 1) if last_transaction else 1
 
         created_transactions = []
-        for key in transaction_keys:
+        
+        for key in available_transaction_keys:
             transaction_data = request.data[key]
             transaction_data['voucher_no'] = next_voucher_no
 
@@ -166,6 +177,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
             created_transactions.append(serializer.data)
 
         return Response(created_transactions, status=status.HTTP_201_CREATED)
+
 
     def perform_create(self, serializer):
         serializer.save()
@@ -301,6 +313,18 @@ class ShareUserManagementViewSet(viewsets.ModelViewSet):
     queryset = ShareUsers.objects.all()
     serializer_class = ShareUserManagementSerializer
 
+    @action(detail=True, methods=['get'])
+    def transactions(self, request, pk=None):
+        # Get the ShareUser
+        share_user = self.get_object()
+
+        # Filter the ShareUserTransaction by the selected ShareUser
+        transactions = ShareUserTransaction.objects.filter(share_user=share_user).select_related('transaction')
+
+        # Serialize the data
+        serializer = ShareUserTransactionIndividualListSerializer(transactions, many=True)
+        return Response(serializer.data)
+
 class ProfitLossShareTransactionViewSet(viewsets.ModelViewSet):
     queryset = ProfitLossShareTransaction.objects.all()
     serializer_class = ProfitLossShareTransactionSerializer
@@ -323,6 +347,22 @@ class ProfitLossShareTransactionViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save()
 
+class ShareUserTransactionViewSet(viewsets.ModelViewSet):
+    queryset = ShareUserTransaction.objects.all()
+    serializer_class = ShareUserTransactionViewSetSerializer
+
+class SharePaymentHistoryViewSet(viewsets.ModelViewSet):
+    queryset = SharePaymentHistory.objects.all()
+    serializer_class = SharePaymentHistorySerializer
+
+    @action(detail=False, methods=['get'], url_path='by-transaction/(?P<transaction_id>\d+)')
+    def by_transaction(self, request, transaction_id=None):
+        # Fetch payment histories by transaction ID
+        payment_histories = SharePaymentHistory.objects.filter(
+            share_user_transaction_id=transaction_id
+        )
+        serializer = self.get_serializer(payment_histories, many=True)
+        return Response(serializer.data)
 class CashCountSheetViewSet(viewsets.ModelViewSet):
     queryset = CashCountSheet.objects.all()
     serializer_class = CashCountSheetSerializer
