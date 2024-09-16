@@ -70,9 +70,6 @@ const DayBookReport: React.FC = () => {
     }
   };
 
-  const handleCreateModalOpen = () => {
-    setIsModalOpen(true);
-  };
 
   const handleCreateModalClose = () => {
     setIsModalOpen(false);
@@ -130,13 +127,6 @@ const DayBookReport: React.FC = () => {
             className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg shadow-sm transition duration-300 ease-in-out disabled:opacity-50"
           >
             {isSearching ? "Searching..." : "Search"}
-          </button>
-
-          <button
-            onClick={handleCreateModalOpen}
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg shadow-sm transition duration-300 ease-in-out"
-          >
-            Create Cash Count Sheet
           </button>
         </div>
       </div>
