@@ -297,7 +297,7 @@ const SalesEntryPage: React.FC = () => {
                                 className="bg-[#6f42c1] text-white py-2 px-4 rounded"
                             >
                                 Create Ledger
-                            </button>   
+                            </button>
                             <button
                                 onClick={handleOpenCashSheetModal}
                                 className="bg-[#6f42c1] text-white py-2 px-4 rounded"
@@ -306,7 +306,7 @@ const SalesEntryPage: React.FC = () => {
                             </button>
                         </div>
                     </div>
-    
+
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
@@ -315,180 +315,203 @@ const SalesEntryPage: React.FC = () => {
                                     type="date"
                                     value={date}
                                     onChange={(e) => setDate(e.target.value)}
-                                    className="border rounded p-2 w-full"
+                                    className="border rounded p-2 w-3/4 sm:w-1/2"
                                     required
                                 />
                             </div>
-    
-                            <div>
+
+                            <div className="flex flex-col items-end">
                                 <label className="block mb-2 text-lg font-bold">Reference No.</label>
                                 <input
                                     type="text"
                                     value={refNo}
                                     onChange={(e) => setRefNo(e.target.value)}
-                                    className="border rounded p-2 w-full"
+                                    className="border rounded p-2 w-3/4 sm:w-1/2 text-right"
                                 />
                             </div>
-    
+
+
                             {/* SalesSectionStart */}
-                            <div>
-                                <label className="block mb-2 text-lg font-bold">Sales</label>
-                                <select
-                                    value={selectedSaleParticulars}
-                                    onChange={(e) => setSelectedSaleParticulars(e.target.value)}
-                                    className="border rounded p-2 w-full"
-                                >
-                                    <option value="">Select an account</option>
-                                    {ledgerOptions
-                                        .filter((ledger) =>
-                                            ledger.name.toLowerCase().includes("sales account")
-                                        )
-                                        .map((ledger) => (
-                                            <option key={ledger.id} value={ledger.id}>
-                                                {ledger.name}
-                                            </option>
-                                        ))}
-                                </select>
+                            <div className="space-y-6"> {/* Adjust spacing between sections */}
+                                <div className="flex flex-col sm:flex-row gap-6">
+                                    <div className="flex-1">
+                                        <label className="block mb-2 text-lg font-bold">Sales</label>
+                                        <select
+                                            value={selectedSaleParticulars}
+                                            onChange={(e) => setSelectedSaleParticulars(e.target.value)}
+                                            className="border rounded p-2 w-full"
+                                        >
+                                            <option value="">Select an account</option>
+                                            {ledgerOptions
+                                                .filter((ledger) =>
+                                                    ledger.name.toLowerCase().includes("sales account")
+                                                )
+                                                .map((ledger) => (
+                                                    <option key={ledger.id} value={ledger.id}>
+                                                        {ledger.name}
+                                                    </option>
+                                                ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="flex-1">
+                                        <label className="block mb-2 text-lg font-bold">Amount</label>
+                                        <input
+                                            type="number"
+                                            value={salecreditAmount}
+                                            onChange={(e) => setSaleCreditAmount(e.target.value)}
+                                            className="border rounded p-2 w-full"
+                                            step="0.01"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {/* Cash Section */}
+                                    <div className="flex gap-6">
+                                        <div className="flex-1">
+                                            <label className="block mb-2 text-lg font-bold">Cash</label>
+                                            <select
+                                                value={selectedCash}
+                                                onChange={(e) => setSelectedCash(e.target.value)}
+                                                className="border rounded p-2 w-full"
+                                            >
+                                                <option value="">Select an account</option>
+                                                {ledgerOptions
+                                                    .filter((ledger) =>
+                                                        ledger.name.toLowerCase().includes("cash account")
+                                                    )
+                                                    .map((ledger) => (
+                                                        <option key={ledger.id} value={ledger.id}>
+                                                            {ledger.name}
+                                                        </option>
+                                                    ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="flex-1">
+                                            <label className="block mb-2 text-lg font-bold">Amount</label>
+                                            <input
+                                                type="number"
+                                                value={cashdebitAmount}
+                                                onChange={(e) => setCashDebitAmount(e.target.value)}
+                                                className="border rounded p-2 w-full"
+                                                step="0.01"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Bank Section */}
+                                    <div className="flex gap-6">
+                                        <div className="flex-1">
+                                            <label className="block mb-2 text-lg font-bold">Bank</label>
+                                            <select
+                                                value={selectedBank}
+                                                onChange={(e) => setSelectedBank(e.target.value)}
+                                                className="border rounded p-2 w-full"
+                                            >
+                                                <option value="">Select an account</option>
+                                                {ledgerOptions
+                                                    .filter((ledger) =>
+                                                        ledger.group.name.toLowerCase().includes("bank account")
+                                                    )
+                                                    .map((ledger) => (
+                                                        <option key={ledger.id} value={ledger.id}>
+                                                            {ledger.name}
+                                                        </option>
+                                                    ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="flex-1">
+                                            <label className="block mb-2 text-lg font-bold">Amount</label>
+                                            <input
+                                                type="number"
+                                                value={bankdebitAmount}
+                                                onChange={(e) => setBankDebitAmount(e.target.value)}
+                                                className="border rounded p-2 w-full"
+                                                step="0.01"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-    
-                            <div>
-                                <label className="block mb-2 text-lg font-bold">Amount</label>
-                                <input
-                                    type="number"
-                                    value={salecreditAmount}
-                                    onChange={(e) => setSaleCreditAmount(e.target.value)}
-                                    className="border rounded p-2 w-full"
-                                    step="0.01"
-                                />
-                            </div>
-    
-                            <div>
-                                <label className="block mb-2 text-lg font-bold">Cash</label>
-                                <select
-                                    value={selectedCash}
-                                    onChange={(e) => setSelectedCash(e.target.value)}
-                                    className="border rounded p-2 w-full"
-                                >
-                                    <option value="">Select an account</option>
-                                    {ledgerOptions
-                                        .filter((ledger) =>
-                                            ledger.name.toLowerCase().includes("cash account")
-                                        )
-                                        .map((ledger) => (
-                                            <option key={ledger.id} value={ledger.id}>
-                                                {ledger.name}
-                                            </option>
-                                        ))}
-                                </select>
-                            </div>
-    
-                            <div>
-                                <label className="block mb-2 text-lg font-bold">Amount</label>
-                                <input
-                                    type="number"
-                                    value={cashdebitAmount}
-                                    onChange={(e) => setCashDebitAmount(e.target.value)}
-                                    className="border rounded p-2 w-full"
-                                    step="0.01"
-                                />
-                            </div>
-    
-                            <div>
-                                <label className="block mb-2 text-lg font-bold">Bank</label>
-                                <select
-                                    value={selectedBank}
-                                    onChange={(e) => setSelectedBank(e.target.value)}
-                                    className="border rounded p-2 w-full"
-                                >
-                                    <option value="">Select an account</option>
-                                    {ledgerOptions
-                                        .filter((ledger) =>
-                                            ledger.group.name.toLowerCase().includes("bank account")
-                                        )
-                                        .map((ledger) => (
-                                            <option key={ledger.id} value={ledger.id}>
-                                                {ledger.name}
-                                            </option>
-                                        ))}
-                                </select>
-                            </div>
-    
-                            <div>
-                                <label className="block mb-2 text-lg font-bold">Amount</label>
-                                <input
-                                    type="number"
-                                    value={bankdebitAmount}
-                                    onChange={(e) => setBankDebitAmount(e.target.value)}
-                                    className="border rounded p-2 w-full"
-                                    step="0.01"
-                                />
-                            </div>
+
+
                             {/* SalesSectionEnd */}
-    
+
                             {/* PurchaseSectionStart */}
-                            <div>
-                                <label className="block mb-2 text-lg font-bold">Purchase</label>
-                                <select
-                                    value={selectedPurchase}
-                                    onChange={(e) => setselectedPurchase(e.target.value)}
-                                    className="border rounded p-2 w-full"
-                                >
-                                    <option value="">Select an account</option>
-                                    {ledgerOptions
-                                        .filter((ledger) =>
-                                            ledger.name.toLowerCase().includes("purchase account")
-                                        )
-                                        .map((ledger) => (
-                                            <option key={ledger.id} value={ledger.id}>
-                                                {ledger.name}
-                                            </option>
-                                        ))}
-                                </select>
+                            <div className="space-y-4"> {/* Adjust spacing between sections */}
+                                <div className="flex gap-6">
+                                    <div className="flex-1">
+                                        <label className="block mb-2 text-lg font-bold">Purchase</label>
+                                        <select
+                                            value={selectedPurchase}
+                                            onChange={(e) => setselectedPurchase(e.target.value)}
+                                            className="border rounded p-2 w-full"
+                                        >
+                                            <option value="">Select an account</option>
+                                            {ledgerOptions
+                                                .filter((ledger) =>
+                                                    ledger.name.toLowerCase().includes("purchase account")
+                                                )
+                                                .map((ledger) => (
+                                                    <option key={ledger.id} value={ledger.id}>
+                                                        {ledger.name}
+                                                    </option>
+                                                ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="flex-1">
+                                        <label className="block mb-2 text-lg font-bold">Amount</label>
+                                        <input
+                                            type="number"
+                                            value={purchasedebitAmount}
+                                            onChange={(e) => setPurchaseDebitAmount(e.target.value)}
+                                            className="border rounded p-2 w-full"
+                                            step="0.01"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-6 mb-4">
+                                    <div className="flex-1">
+                                        <label className="block mb-2 text-lg font-bold">Cash</label>
+                                        <select
+                                            value={selectedPurchaseParticulars}
+                                            onChange={(e) => setSelectedPurchaseParticulars(e.target.value)}
+                                            className="border rounded p-2 w-full"
+                                        >
+                                            <option value="">Select an account</option>
+                                            {ledgerOptions
+                                                .filter((ledger) =>
+                                                    ledger.name.toLowerCase().includes("cash account")
+                                                )
+                                                .map((ledger) => (
+                                                    <option key={ledger.id} value={ledger.id}>
+                                                        {ledger.name}
+                                                    </option>
+                                                ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="flex-1">
+                                        <label className="block mb-2 text-lg font-bold">Amount</label>
+                                        <input
+                                            type="number"
+                                            value={purchaseCashcreditAmount}
+                                            onChange={(e) => setPurchaseCashCreditAmount(e.target.value)}
+                                            className="border rounded p-2 w-full"
+                                            step="0.01"
+                                        />
+                                    </div>
+                                </div>
                             </div>
-    
-                            <div>
-                                <label className="block mb-2 text-lg font-bold">Amount</label>
-                                <input
-                                    type="number"
-                                    value={purchasedebitAmount}
-                                    onChange={(e) => setPurchaseDebitAmount(e.target.value)}
-                                    className="border rounded p-2 w-full"
-                                    step="0.01"
-                                />
-                            </div>
-    
-                            <div>
-                                <label className="block mb-2 text-lg font-bold">Cash</label>
-                                <select
-                                    value={selectedPurchaseParticulars}
-                                    onChange={(e) => setSelectedPurchaseParticulars(e.target.value)}
-                                    className="border rounded p-2 w-full"
-                                >
-                                    <option value="">Select an account</option>
-                                    {ledgerOptions
-                                        .filter((ledger) =>
-                                            ledger.name.toLowerCase().includes("cash account")
-                                        )
-                                        .map((ledger) => (
-                                            <option key={ledger.id} value={ledger.id}>
-                                                {ledger.name}
-                                            </option>
-                                        ))}
-                                </select>
-                            </div>
-    
-                            <div>
-                                <label className="block mb-2 text-lg font-bold">Amount</label>
-                                <input
-                                    type="number"
-                                    value={purchaseCashcreditAmount}
-                                    onChange={(e) => setPurchaseCashCreditAmount(e.target.value)}
-                                    className="border rounded p-2 w-full"
-                                    step="0.01"
-                                />
-                            </div>
+
+
                             {/* PurchaseSectionEnd */}
-    
+
                             <div className="col-span-1 sm:col-span-2">
                                 <label className="block mb-2 text-lg font-bold">Remarks</label>
                                 <textarea
@@ -499,18 +522,20 @@ const SalesEntryPage: React.FC = () => {
                                 />
                             </div>
                         </div>
-    
+
                         {error && <p className="text-red-600">{error}</p>}
-    
-                        <button
-                            type="submit"
-                            className={`bg-blue-500 text-white py-2 px-4 rounded ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? 'Submitting...' : 'Submit'}
-                        </button>
+
+                        <div className="flex justify-center mt-4">
+                            <button
+                                type="submit"
+                                className={`bg-blue-500 text-white py-2 px-4 rounded ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Submitting...' : 'Submit'}
+                            </button>
+                        </div>
                     </form>
-    
+
                     {isModalOpen && (
                         <LedgerCreationModal
                             isOpen={isModalOpen}
@@ -526,7 +551,7 @@ const SalesEntryPage: React.FC = () => {
             </div>
         </Layout>
     );
-    
+
 };
 
 export default SalesEntryPage;
