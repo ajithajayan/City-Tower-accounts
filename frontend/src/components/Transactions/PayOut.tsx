@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import LedgerCreationModal from "@/components/modals/LedgerCreationModal";
-import CashCountSheetModal from "@/components/modals/CashCountSheetModal"; // Import your Cash Count modal
+import CashCountSheetModal from "@/components/modals/CashCountSheetModal";
 import { api } from "@/services/api";
 
 interface Ledger {
@@ -28,7 +28,6 @@ interface TransactionData {
   ref_no?: string;
   debit_credit: string;
   transaction_type: 'payout',
-
 }
 
 type PayOutRequest = {
@@ -46,9 +45,9 @@ const PayOut: React.FC = () => {
   const [creditAmount, setCreditAmount] = useState<string>("");
   const [remarks, setRemarks] = useState<string>("");
   const [refNo, setRefNo] = useState<string>("");
-  const [cashCountValues, setCashCountValues] = useState<CashCountItem[] | null>(null); // Cash Count values
+  const [cashCountValues, setCashCountValues] = useState<CashCountItem[] | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isCashCountModalOpen, setIsCashCountModalOpen] = useState<boolean>(false); // Track Cash Count modal state
+  const [isCashCountModalOpen, setIsCashCountModalOpen] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -64,8 +63,8 @@ const PayOut: React.FC = () => {
           const data = response.data;
           if (Array.isArray(data.results)) {
             allLedgers = [...allLedgers, ...data.results];
-            hasMore = data.next !== null; // Check if there's another page
-            page += 1; // Move to the next page
+            hasMore = data.next !== null;
+            page += 1;
           } else {
             console.error("Unexpected API response format", data);
             hasMore = false;
@@ -76,7 +75,6 @@ const PayOut: React.FC = () => {
         }
       }
 
-      console.log("Fetched ledgers:", allLedgers);
       setLedgerOptions(allLedgers);
     };
 
@@ -92,10 +90,10 @@ const PayOut: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return; // Prevent multiple submissions
+    if (isSubmitting) return;
 
-    setIsSubmitting(true); // Set submitting state
-    setError(null); // Reset any previous errors
+    setIsSubmitting(true);
+    setError(null);
 
     const transactionData1: TransactionData = {
       ledger_id: selectedExpensePayables!,
@@ -106,8 +104,7 @@ const PayOut: React.FC = () => {
       remarks,
       debit_credit: "debit",
       transaction_type: 'payout',
-
-      ref_no: refNo.trim() || undefined, // Set ref_no only if it's not empty
+      ref_no: refNo.trim() || undefined,
     };
 
     const transactionData2: TransactionData = {
@@ -119,8 +116,7 @@ const PayOut: React.FC = () => {
       remarks,
       debit_credit: "credit",
       transaction_type: 'payout',
-
-      ref_no: refNo.trim() || undefined, // Set ref_no only if it's not empty
+      ref_no: refNo.trim() || undefined,
     };
 
     const requestData: PayOutRequest = {
@@ -130,33 +126,20 @@ const PayOut: React.FC = () => {
     };
 
     try {
-      // Submit both transactions
-      console.log("Posting transactions with data:", requestData);
       await api.post("/transactions/", requestData);
-      console.log("Transactions posted successfully");
 
-      // Debugging: Log the cash count values
-      console.log("Cash Count Values:", cashCountValues);
-
-      // Now handle Cash Count submission (similar to PayIn)
       if (cashCountValues && cashCountValues.length > 0) {
         const cashSheetData = {
           created_date: date,
           voucher_number: refNo ? parseInt(refNo, 10) : null,
-          amount: debitAmount ? parseFloat(debitAmount) : 0, // Total cash amount
+          amount: debitAmount ? parseFloat(debitAmount) : 0,
           transaction_type: "payout",
-          items: cashCountValues, // Cash count details
+          items: cashCountValues,
         };
 
-        console.log("Submitting Cash Sheet Data:", cashSheetData);
-
-        await api.post("/cashsheet/", cashSheetData); // Post Cash Count Sheet details
-        console.log("Cash Count Sheet posted successfully");
-      } else {
-        console.log("No cash count values to submit.");
+        await api.post("/cashsheet/", cashSheetData);
       }
 
-      // Reset form fields
       setSelectedExpensePayables("");
       setSelectedParticulars("");
       setDate("");
@@ -164,12 +147,12 @@ const PayOut: React.FC = () => {
       setCreditAmount("");
       setRemarks("");
       setRefNo("");
-      setCashCountValues(null); // Reset Cash Count state
+      setCashCountValues(null);
     } catch (error) {
       console.error("Error posting transactions or cash count", error);
       setError("There was an error submitting the transaction. Please try again.");
     } finally {
-      setIsSubmitting(false); // Reset submitting state
+      setIsSubmitting(false);
     }
   };
 
@@ -199,57 +182,58 @@ const PayOut: React.FC = () => {
       }
     }
 
-    console.log("Fetched ledgers:", allLedgers);
     setLedgerOptions(allLedgers);
   };
 
   return (
-    <div className="bg-blue-200 p-4">
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold mb-2 sm:mb-0">Pay Out</h1>
-        <button
-          onClick={handleOpenModal}
-          className="bg-[#6f42c1] text-white py-2 px-4 rounded w-full sm:w-auto"
-        >
-          Create Ledger
-        </button>
-        <button
-          onClick={handleOpenCashCountModal} // Button to open Cash Count modal
-          className="bg-[#6f42c1] text-white py-2 px-4 rounded w-full sm:w-auto ml-2"
-        >
-          Cash Count
-        </button>
+    <div className="bg-blue-100 p-6 rounded-lg shadow-lg">
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold mb-4 sm:mb-0">Pay Out</h1>
+        <div className="space-x-4">
+          <button
+            onClick={handleOpenModal}
+            className="bg-[#6f42c1] text-white py-2 px-4 rounded shadow hover:bg-[#5a2d91]"
+          >
+            Create Ledger
+          </button>
+          <button
+            onClick={handleOpenCashCountModal}
+            className="bg-blue-500 text-white py-2 px-4 rounded shadow hover:bg-blue-600"
+          >
+            Cash Count
+          </button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block mb-2 text-lg font-bold">Date</label>
+            <label className="block text-lg font-semibold mb-1">Date</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="border rounded p-2 w-full"
+              className="border border-gray-300 rounded-md p-2 w-full"
               required
             />
           </div>
 
           <div>
-            <label className="block mb-2 text-lg font-bold">Reference No.</label>
+            <label className="block text-lg font-semibold mb-1">Reference No.</label>
             <input
               type="text"
               value={refNo}
               onChange={(e) => setRefNo(e.target.value)}
-              className="border rounded p-2 w-full"
+              className="border border-gray-300 rounded-md p-2 w-full"
             />
           </div>
 
           <div>
-            <label className="block mb-2 text-lg font-bold">Expense/Payables</label>
+            <label className="block text-lg font-semibold mb-1">Expense/Payables</label>
             <select
               value={selectedExpensePayables}
               onChange={(e) => setSelectedExpensePayables(e.target.value)}
-              className="border rounded p-2 w-full"
+              className="border border-gray-300 rounded-md p-2 w-full"
               required
             >
               <option value="">Select a ledger</option>
@@ -261,23 +245,24 @@ const PayOut: React.FC = () => {
             </select>
           </div>
 
-
           <div>
-            <label className="block mb-2 text-lg font-bold">Debit Amount</label>
+            <label className="block text-lg font-semibold mb-1">Debit Amount</label>
             <input
               type="number"
               value={debitAmount}
               onChange={(e) => setDebitAmount(e.target.value)}
-              className="border rounded p-2 w-full"
+              className="border border-gray-300 rounded-md p-2 w-full"
+              step="0.01"
               required
             />
           </div>
+
           <div>
-            <label className="block mb-2 text-lg font-bold">Cash/Bank/Creditors</label>
+            <label className="block text-lg font-semibold mb-1">Cash/Bank/Creditors</label>
             <select
               value={selectedParticulars}
               onChange={(e) => setSelectedParticulars(e.target.value)}
-              className="border rounded p-2 w-full"
+              className="border border-gray-300 rounded-md p-2 w-full"
               required
             >
               <option value="">Select a ledger</option>
@@ -288,24 +273,26 @@ const PayOut: React.FC = () => {
               ))}
             </select>
           </div>
+
           <div>
-            <label className="block mb-2 text-lg font-bold">Credit Amount</label>
+            <label className="block text-lg font-semibold mb-1">Credit Amount</label>
             <input
               type="number"
               value={creditAmount}
               onChange={(e) => setCreditAmount(e.target.value)}
-              className="border rounded p-2 w-full"
+              className="border border-gray-300 rounded-md p-2 w-full"
+              step="0.01"
               required
             />
           </div>
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">Remarks</label>
+          <label className="block text-lg font-semibold mb-1">Remarks</label>
           <textarea
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
-            className="border rounded p-2 w-full"
+            className="border border-gray-300 rounded-md p-2 w-full"
             required
           />
         </div>
@@ -313,20 +300,23 @@ const PayOut: React.FC = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="bg-[#6f42c1] text-white py-2 px-4 rounded"
+          className="bg-[#6f42c1] text-white py-2 px-4 rounded shadow hover:bg-[#5a2d91]"
         >
           {isSubmitting ? "Processing..." : "Submit"}
         </button>
         {error && <p className="text-red-500 mt-2">{error}</p>}
       </form>
 
-      <LedgerCreationModal isOpen={isModalOpen} refreshLedgerOptions={refreshLedgerOptions} onClose={handleCloseModal} />
-
+      <LedgerCreationModal
+        isOpen={isModalOpen}
+        refreshLedgerOptions={refreshLedgerOptions}
+        onClose={handleCloseModal}
+      />
 
       <CashCountSheetModal
-        isOpen={isCashCountModalOpen} // Open CashCountSheetModal when triggered
+        isOpen={isCashCountModalOpen}
         onClose={(data: CashCountItem[]) => handleCloseCashCountModal(data)}
-        onSubmit={(data: CashCountItem[]) => setCashCountValues(data)} // Capture cash count values and pass to state
+        onSubmit={(data: CashCountItem[]) => setCashCountValues(data)}
       />
     </div>
   );
