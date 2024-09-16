@@ -141,9 +141,9 @@ const IndividualReport: React.FC = () => {
                   <th className="border px-4 py-2">Percentage Amount</th>
                   <th className="border px-4 py-2">Balance Amount</th>
                   <th className="border px-4 py-2">Paid Amount</th>
-                  <th className="border px-4 py-2">Pay</th>
-                  <th className="border px-4 py-2">Payment History</th>
-                  <th className="border px-4 py-2">Actions</th>
+                  <th className="border px-4 py-2 print-hide">Pay</th> {/* Hide in print */}
+                  <th className="border px-4 py-2 print-hide">Payment History</th> {/* Hide in print */}
+                  <th className="border px-4 py-2 print-hide">Actions</th> {/* Hide in print */}
                 </tr>
               </thead>
               <tbody>
@@ -164,7 +164,7 @@ const IndividualReport: React.FC = () => {
                       <td className="border px-4 py-2">{transaction.balance_amount}</td>
                       <td className="border px-4 py-2">{paidAmount.toFixed(2)}</td>
 
-                      <td className="border px-4 py-2">
+                      <td className="border px-4 py-2 print-hide">
                         <button
                           className="bg-green-500 text-white px-2 py-1 rounded"
                           onClick={() => handlePayment(transaction.id)}
@@ -173,7 +173,7 @@ const IndividualReport: React.FC = () => {
                         </button>
                       </td>
 
-                      <td className="border px-4 py-2">
+                      <td className="border px-4 py-2 print-hide">
                         <button
                           className="bg-yellow-500 text-white px-2 py-1 rounded"
                           onClick={() => handleViewPaymentHistory(transaction.id)}
@@ -182,7 +182,7 @@ const IndividualReport: React.FC = () => {
                         </button>
                       </td>
 
-                      <td className="border px-4 py-2">
+                      <td className="border px-4 py-2 print-hide">
                         <button
                           className="bg-blue-500 text-white px-2 py-1 rounded"
                           onClick={() => handleEditTransaction(transaction.id, selectedUserId)}
@@ -204,9 +204,9 @@ const IndividualReport: React.FC = () => {
                   <td className="border px-4 py-2 font-semibold">{totalPercentageAmount.toFixed(2)}</td>
                   <td className="border px-4 py-2 font-semibold">{totalBalanceAmount.toFixed(2)}</td>
                   <td className="border px-4 py-2 font-semibold">{totalPaidAmount.toFixed(2)}</td>
-                  <td className="border px-4 py-2"></td>
-                  <td className="border px-4 py-2"></td>
-                  <td className="border px-4 py-2"></td>
+                  <td className="border px-4 py-2 print-hide"></td>
+                  <td className="border px-4 py-2 print-hide"></td>
+                  <td className="border px-4 py-2 print-hide"></td>
                 </tr>
               </tbody>
             </table>

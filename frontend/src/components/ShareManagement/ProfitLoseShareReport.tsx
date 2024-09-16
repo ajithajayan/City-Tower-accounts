@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { api } from '@/services/api';
 import ShareUserTransactionsModal from '@/components/modals/ShareUserTransactionsModal';
+import ReactToPrint from 'react-to-print';
 
 interface ShareUser {
     id: number;
@@ -45,6 +46,9 @@ const ProfitLoseShareReport: React.FC = () => {
     const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
     const [previousPageUrl, setPreviousPageUrl] = useState<string | null>(null);
     const [currentPageUrl, setCurrentPageUrl] = useState<string>('/profit-loss-share-transactions/');
+
+    // Reference for ReactToPrint
+    const printRef = useRef<HTMLTableElement | null>(null);
 
     useEffect(() => {
         const fetchTransactions = async (url: string) => {
@@ -102,7 +106,17 @@ const ProfitLoseShareReport: React.FC = () => {
     return (
         <div>
             <h1 className="text-2xl font-bold mb-2 sm:mb-0">Profit Loss Share Transactions</h1>
-            <table className="min-w-full divide-y divide-gray-200 mt-4">
+            
+            {transactions.length > 0 && (
+                <div className="flex justify-end mb-4">
+                    <ReactToPrint
+                        trigger={() => <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Print</button>}
+                        content={() => printRef.current}
+                    />
+                </div>
+            )}
+            
+            <table className="min-w-full divide-y divide-gray-200 mt-4" ref={printRef}>
                 <thead className="bg-gray-50">
                     <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction No</th>
@@ -113,7 +127,7 @@ const ProfitLoseShareReport: React.FC = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profit Amount</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loss Amount</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">View</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print-hide">View</th>
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -127,7 +141,7 @@ const ProfitLoseShareReport: React.FC = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.status}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.profit_amount}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.loss_amount}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 cursor-pointer" onClick={() => handleViewClick(transaction)}>View</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 cursor-pointer print-hide" onClick={() => handleViewClick(transaction)}>View</td>
                         </tr>
                     ))}
                 </tbody>

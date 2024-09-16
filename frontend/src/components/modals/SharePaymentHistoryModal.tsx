@@ -1,6 +1,6 @@
-// components/modals/SharePaymentHistoryModal.tsx
-import React, { useState, useEffect } from 'react';
-import { api } from '@/services/api'; // Import your API service
+import React, { useState, useEffect, useRef } from 'react';
+import { api } from '@/services/api';
+import ReactToPrint from 'react-to-print';
 
 interface PaymentHistory {
   id: number;
@@ -22,6 +22,8 @@ const SharePaymentHistoryModal: React.FC<SharePaymentHistoryModalProps> = ({
   const [paymentHistories, setPaymentHistories] = useState<PaymentHistory[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [totalPaidAmount, setTotalPaidAmount] = useState<number>(0);
+
+  const componentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (transactionId && isOpen) {
@@ -51,11 +53,19 @@ const SharePaymentHistoryModal: React.FC<SharePaymentHistoryModalProps> = ({
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white p-6 rounded-lg w-1/2 max-w-4xl">
         <h2 className="text-2xl font-semibold mb-4">Payment History</h2>
+
         {loading ? (
           <p>Loading...</p>
         ) : paymentHistories.length > 0 ? (
           <>
-            <div className="overflow-x-auto">
+            <div className="mb-4 flex justify-end">
+              <ReactToPrint
+                trigger={() => <button className="bg-blue-500 text-white px-4 py-2 rounded">Print</button>}
+                content={() => componentRef.current}
+              />
+            </div>
+
+            <div className="overflow-x-auto" ref={componentRef}>
               <table className="min-w-full divide-y divide-gray-200 border-collapse border border-gray-300">
                 <thead className="bg-gray-100">
                   <tr>
