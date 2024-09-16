@@ -9,10 +9,14 @@ interface CashCountEntry {
 }
 
 // Define the props for the CashCountSheetModal component
+// CashCountSheetModal.tsx
+
 interface CashCountSheetModalProps {
   isOpen: boolean;
-  onClose: (entries: CashCountEntry[]) => void; // Pass entries back to parent component
+  onClose: (entries: any) => void; // Adjust the type as needed
+  onSubmit?: (entries: any) => void; // Add this line for the onSubmit prop
 }
+
 
 // Initialize with default entries
 const initialEntries: CashCountEntry[] = [
