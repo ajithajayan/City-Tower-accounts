@@ -31,6 +31,7 @@ const SalesCashSheetModal: React.FC<SalesCashSheetModalProps> = ({ isOpen, onClo
 
   // Update all entries' date when the first entry's date changes
   const handleDateChange = (index: number, value: string) => {
+    console.log(index)
     const newEntries = entries.map((entry) => ({
       ...entry,
       created_date: value,

@@ -15,6 +15,10 @@ const Ledger: React.FC = () => {
     setIsModalOpen(false);
   };
 
+  function refreshLedgerOptions(): void {
+    
+  }
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
@@ -51,7 +55,8 @@ const Ledger: React.FC = () => {
         {activeTab === "report" && <MainGroups />}
       </div>
 
-      {isModalOpen && <LedgerCreationModal isOpen={isModalOpen} onClose={closeModal} />}
+      {isModalOpen && <LedgerCreationModal isOpen={isModalOpen} onClose={closeModal}  refreshLedgerOptions={refreshLedgerOptions}
+      />}
     </div>
   );
 };

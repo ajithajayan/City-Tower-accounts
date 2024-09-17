@@ -284,7 +284,7 @@ const ProfitLossShareTransaction: React.FC = () => {
                 </div>
 
                 {/* Name Sections */}
-                {nameSections.map((section, index) => (
+                {nameSections.map((section) => (
                     <div key={section.id} className="border p-4 rounded-md shadow-sm mt-4">
                         <div className="flex space-x-4">
                             <div className="flex-1">

@@ -1,10 +1,21 @@
 import { api } from "@/services/api";
 import React, { useState, useEffect } from "react";
+import { AxiosResponse } from "axios";
 
 interface LedgerCreationModalProps {
   isOpen: boolean;
   onClose: () => void;
   refreshLedgerOptions: () => void;
+}
+
+interface Group {
+  id: number;
+  name: string;
+}
+
+interface ApiResponse {
+  results: Group[];
+  next: string | null;
 }
 
 const LedgerCreationModal: React.FC<LedgerCreationModalProps> = ({ isOpen, onClose, refreshLedgerOptions }) => {
@@ -13,34 +24,35 @@ const LedgerCreationModal: React.FC<LedgerCreationModalProps> = ({ isOpen, onClo
   const [openingBalance, setOpeningBalance] = useState<string>("");
   const [group, setGroup] = useState<string>("");
   const [debitCredit, setDebitCredit] = useState<string>("");
-  const [groupOptions, setGroupOptions] = useState<{ id: number; name: string }[]>([]);
+  const [groupOptions, setGroupOptions] = useState<Group[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchGroups = async (url: string | null) => {
-      if (url) {
-        try {
-          const response = await api.get(url);
-          const data = response.data;
+    const fetchGroups = async () => {
+      try {
+        let allGroups: Group[] = [];
+        let nextUrl: string | null = "/main-groups/";
+
+        while (nextUrl) {
+          const response: AxiosResponse<ApiResponse> = await api.get(nextUrl);
+          const data: ApiResponse = response.data;
 
           if (Array.isArray(data.results)) {
-            setGroupOptions((prevOptions) => [...prevOptions, ...data.results]);
+            allGroups = [...allGroups, ...data.results];
           } else {
             console.error("Unexpected API response format for groups", data);
           }
 
-          // If there is a next page, fetch the next set of results
-          if (data.next) {
-            fetchGroups(data.next);
-          }
-        } catch (error) {
-          console.error("There was an error fetching the groups!", error);
+          nextUrl = data.next;
         }
+
+        setGroupOptions(allGroups);
+      } catch (error) {
+        console.error("There was an error fetching the groups!", error);
       }
     };
 
-    // Start fetching from the first page
-    fetchGroups("/main-groups/");
+    fetchGroups();
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -66,7 +78,6 @@ const LedgerCreationModal: React.FC<LedgerCreationModalProps> = ({ isOpen, onClo
         console.log("Ledger created successfully:", response.data);
         onClose(); // Close the modal on successful submission
         refreshLedgerOptions();
-
       })
       .catch((error) => {
         console.error("There was an error creating the ledger!", error);
