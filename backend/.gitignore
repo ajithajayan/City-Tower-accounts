@@ -8,6 +8,7 @@ venv/
 *.env
 .venv
 ../.venv
+/myprojectenv/
 
 # Ignore media files
 /media/
