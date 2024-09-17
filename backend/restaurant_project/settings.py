@@ -97,12 +97,12 @@ WSGI_APPLICATION = "restaurant_project.wsgi.application"
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': env.str("NAME"),
-        'USER': env.str("USER"),
-        'PASSWORD': env.str("PASSWORD"),
-        'HOST': env.str("HOST"),
-        'PORT': '',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env.str('NAME'),
+        'USER': env.str('USER'),
+        'PASSWORD': env.str('PASSWORD'),
+        'HOST': env.str('HOST'),
+        'PORT': env.str('PORT', default='5432'),  # Default port for PostgreSQL
     }
 }
 
@@ -131,9 +131,9 @@ USE_TZ = True
 
 
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = BASE_DIR / "static"
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
+    BASE_DIR / "restaurant_project/static",
 ]
 
 MEDIA_URL = "/media/"
